@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+// ================================================================================
+// CLI - dpx_deckDoc entry point
+// ================================================================================
+// PROJECT: dpx_deckDoc
+// ================================================================================
+//
+// File: src/cli.js
+// Purpose: `capture`, `annotate`, `build` subcommands tying the capture
+//          backends, config parser, annotation store, and site generator
+//          together. No build step — run directly with `node src/cli.js`.
+// Dependencies: playwright (screenshot mode only)
+//
+// ================================================================================
+
+import path from "node:path";
+import fs from "node:fs/promises";
+import { captureSatellitePage } from "./capture/satellite.js";
+import { captureScreenshotPage } from "./capture/screenshot.js";
+import { parseCompanionExport } from "./config/parseExport.js";
+import { loadAnnotations, saveAnnotations, mergePrefill } from "./annotate/store.js";
+import { buildSite } from "./site/build.js";
+
+function parseArgs(argv) {
+  const args = { _: [] };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith("--")) {
+        args[key] = next;
+        i++;
+      } else {
+        args[key] = true;
+      }
+    } else {
+      args._.push(arg);
+    }
+  }
+  return args;
+}
+
+async function appendManifest(outDir, entries) {
+  const manifestPath = path.join(outDir, "manifest.json");
+  let manifest = [];
+  try {
+    manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+  }
+  manifest.push(...entries);
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+}
+
+async function cmdCapture(args) {
+  const outDir = args.out ?? "output";
+  const page = Number(args.page ?? 1);
+
+  if (args.mode === "satellite") {
+    if (!args.host) throw new Error("--host is required for satellite mode");
+    const rows = Number(args.rows ?? 4);
+    const cols = Number(args.cols ?? 8);
+    const imgDir = path.join(outDir, "images", String(page));
+    const result = await captureSatellitePage({
+      host: args.host,
+      page,
+      rows,
+      cols,
+      outDir: imgDir,
+    });
+    const entries = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        entries.push({ page, row, col, image: path.join(imgDir, `${row}-${col}.png`) });
+      }
+    }
+    await appendManifest(outDir, entries);
+    console.log(`Captured ${result.count} buttons on page ${page} via Satellite API`);
+  } else if (args.mode === "screenshot") {
+    if (!args.url) throw new Error("--url is required for screenshot mode");
+    const imgDir = path.join(outDir, "images", String(page));
+    const result = await captureScreenshotPage({
+      url: args.url,
+      outDir: imgDir,
+      gridSelector: args.selector,
+      page,
+    });
+    await appendManifest(outDir, [{ page, row: 0, col: 0, image: result.outPath }]);
+    console.log(`Captured page ${page} screenshot at ${result.outPath}`);
+  } else {
+    throw new Error("--mode must be 'satellite' or 'screenshot'");
+  }
+}
+
+async function cmdAnnotate(args) {
+  const outDir = args.out ?? "output";
+  if (!args.config) throw new Error("--config <path to .companionconfig> is required");
+
+  const buttonMetas = await parseCompanionExport(args.config);
+  const annotations = await loadAnnotations(outDir);
+  mergePrefill(annotations, buttonMetas);
+  await saveAnnotations(outDir, annotations);
+  console.log(`Merged prefill annotations for ${buttonMetas.length} buttons into ${outDir}/annotations.json`);
+}
+
+async function cmdBuild(args) {
+  const outDir = args.out ?? "output";
+  const result = await buildSite({ outDir });
+  console.log(`Built site: ${result.pageCount} page(s), ${result.buttonCount} button image(s) -> ${result.siteDir}/index.html`);
+}
+
+async function main() {
+  const [, , command, ...rest] = process.argv;
+  const args = parseArgs(rest);
+
+  switch (command) {
+    case "capture":
+      await cmdCapture(args);
+      break;
+    case "annotate":
+      await cmdAnnotate(args);
+      break;
+    case "build":
+      await cmdBuild(args);
+      break;
+    default:
+      console.error("Usage: node src/cli.js <capture|annotate|build> [--flags]");
+      process.exit(1);
+  }
+}
+
+main().catch((err) => {
+  console.error(err.message);
+  process.exit(1);
+});
