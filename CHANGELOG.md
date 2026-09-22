@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.6.0] - 2026-09-22
+
+### Added
+- Regression test suite (`npm test`, Node's built-in `node:test`, zero added dependencies): `test/annotate.store.test.js`, `test/pageSelection.test.js`, `test/manifest.test.js`, `test/parseExport.test.js` (schema-accurate fixture — the exact shape that broke twice during development), `test/site.build.test.js`, `test/serve.test.js` (real HTTP routes against a live server), `test/meta.test.js`. 43 tests, all passing.
+
+### Changed
+- `AGENTS.md` "While coding" rule now requires `npm test` before committing
+
 ## [0.5.0] - 2026-09-22
 
 ### Added

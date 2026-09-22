@@ -6,7 +6,7 @@
 <!-- PROJECT SHIELDS -->
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.5.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.6.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square)
 ![Status](https://img.shields.io/badge/status-functional-brightgreen?style=flat-square)
 
@@ -48,7 +48,8 @@
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>    
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#testing">Testing</a></li>    
     <li><a href="#reflection">Reflection</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -113,7 +114,15 @@ node src/cli.js build --out devices/<name>                     # frozen static h
 
 `scrape` points at one Companion instance and does the whole thing: pulls the config export, discovers every real page, captures every button's actual rendered bitmap, and pre-fills annotations — no per-page looping. Each instance becomes a **device** under `devices/<name>/`, so multiple rigs live side by side (device → pages → buttons).
 
-`serve` opens a local editable app (`http://localhost:4321`) with a device switcher — hover a button for a preview, click to edit Heading / Body / Notice / Note / Command, saves straight to `devices/<name>/annotations.json`. `build` freezes one device into `devices/<name>/site/index.html` — open it directly, no server needed, for handing off to someone else.
+`serve` opens a local editable app (`http://localhost:4321`) with a device switcher — hover a button for a preview, click to edit Heading / Body / Notice / Note / Command / Label override, saves straight to `devices/<name>/annotations.json`. Includes an in-browser "+ New Device" (scrape without the CLI) and "Export Site" (runs `build` and serves the result back) — the CLI commands above are the primitives; day-to-day use can happen entirely from the browser. `build` freezes one device into `devices/<name>/site/index.html` — open it directly, no server needed, for handing off to someone else.
+
+## Testing
+
+```bash
+npm test
+```
+
+Node's built-in test runner (`node --test`, zero extra dependencies) — covers the annotation store's prefill/manual-edit invariants, the config parser against a schema-accurate fixture, the manifest and page-selection helpers, `buildSite()` end-to-end (including the `type="module"`/`file://` regression and page-selection filtering), and `serve.js`'s actual HTTP routes via a live server on an ephemeral port. Capture itself (`src/capture/screenshot.js`) isn't unit-tested — it's browser/DOM-coupled and its correctness depends on a real Companion instance; verify it by running `scrape` against a real target and checking the resulting page counts and images.
 
 <!-- REFLECTION -->
 ## Reflection

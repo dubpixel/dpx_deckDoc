@@ -1,6 +1,6 @@
 {
   "name": "dpx_deckdoc",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Auto-generated documentation for Bitfocus Companion control-surface setups",
   "type": "module",
   "bin": {
@@ -9,7 +9,8 @@
   "scripts": {
     "capture": "node src/cli.js capture",
     "annotate": "node src/cli.js annotate",
-    "build": "node src/cli.js build"
+    "build": "node src/cli.js build",
+    "test": "node --test test/"
   },
   "dependencies": {
     "playwright": "^1.47.0"

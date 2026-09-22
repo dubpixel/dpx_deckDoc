@@ -24,6 +24,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Page selection | Node / `src/pageSelection.js` | Per-page include/exclude flags (`<device>/page-selection.json`) — excluded pages are hidden from the editor nav and skipped by `build` | Included by default; only explicit `false` excludes |
 | Export from browser | `src/serve.js` `/api/build` + `/built/<device>/...` | Runs `buildSite()` server-side and serves the result back so the frozen static site can be opened without touching the CLI | "Export Site" button in the editor header |
 | Label override | `annotations[key].labelOverride` | Replaces the captured on-image text with a fixed override, rendered as an overlay on the button in both the editor and static site | Never auto-filled; purely a manual annotation field |
+| Regression tests | Node built-in `node:test` / `test/` | Covers the annotation store, config parser (schema-accurate fixture), manifest/page-selection helpers, `buildSite()`, and `serve.js`'s real HTTP routes | `npm test` — zero added dependencies. Capture itself is not unit-tested (browser/DOM-coupled); verify against a real instance |
 | Site generator | Node / `src/site/build.js` + `site-template/` | Builds one device's frozen static handoff site | No bundler; plain `<script>` (not `type="module"` — fails under `file://`, see Gotchas) |
 | Satellite capture (reference only) | Node (`net` sockets) / `src/capture/satellite.js` | Protocol-correct Satellite API client, not part of the primary pipeline | Dropped as unnecessary — see Key Decisions |
 | Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
@@ -46,6 +47,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 - Update CHANGELOG.md with feature list
 - Create PR per AGENTS.md §1 template
 - Run the relevant CLI command(s) end-to-end against real output before calling a step done
+- Run `npm test` before committing; add/update a regression test for any bug fixed or schema/route touched
 
 ### Critical Constraints
 
@@ -88,6 +90,8 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 **Freeze one device to a static handoff site:** `node src/cli.js build --out devices/<slug>` → `devices/<slug>/site/index.html`.
 
 **Lower-level primitives** (still useful for ad hoc single-page work): `capture --mode screenshot --url <tablet-url> --page N --out <dir>`, `annotate --config <export-file> --out <dir>`.
+
+**Run the regression suite:** `npm test`.
 
 **Known test instances:** `10.196.11.26` (Companion 4.2.5) and `127.0.0.1:8000` (Companion 4.3.4, same show config, local dev machine) are available for development/testing. Treat both as real dev targets unless told otherwise — do not assume it's safe to run destructive/state-changing commands against either beyond capture.
 
