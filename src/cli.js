@@ -21,6 +21,8 @@ import { parseCompanionExport, parsePageTitles } from "./config/parseExport.js";
 import { loadAnnotations, saveAnnotations, mergePrefill } from "./annotate/store.js";
 import { buildSite } from "./site/build.js";
 import { serve } from "./serve.js";
+import { appendManifest } from "./manifest.js";
+import { scrapeDevice } from "./scrape.js";
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -40,18 +42,6 @@ function parseArgs(argv) {
     }
   }
   return args;
-}
-
-async function appendManifest(outDir, entries) {
-  const manifestPath = path.join(outDir, "manifest.json");
-  let manifest = [];
-  try {
-    manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
-  } catch (err) {
-    if (err.code !== "ENOENT") throw err;
-  }
-  manifest.push(...entries);
-  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 }
 
 async function cmdCapture(args) {
@@ -118,9 +108,19 @@ async function cmdBuild(args) {
 }
 
 async function cmdServe(args) {
-  const outDir = args.out ?? "output";
+  const outDir = args.out ?? "devices";
   const port = Number(args.port ?? 4321);
   await serve({ outDir, port });
+}
+
+async function cmdScrape(args) {
+  if (!args.host) throw new Error("--host <ip or hostname> is required");
+  await scrapeDevice({
+    host: args.host,
+    port: args.port ? Number(args.port) : undefined,
+    device: args.device,
+    devicesRoot: args.out ?? "devices",
+  });
 }
 
 async function main() {
@@ -140,8 +140,14 @@ async function main() {
     case "serve":
       await cmdServe(args);
       break;
+    case "scrape":
+      await cmdScrape(args);
+      break;
     default:
-      console.error("Usage: node src/cli.js <capture|annotate|build|serve> [--flags]");
+      console.error("Usage: node src/cli.js <scrape|capture|annotate|build|serve> [--flags]");
+      console.error("  scrape --host <ip> [--device <name>] [--port 8000] [--out devices]");
+      console.error("    One-shot: pulls the config export, discovers every page, captures");
+      console.error("    every button, and merges annotations for a single Companion instance.");
       process.exit(1);
   }
 }

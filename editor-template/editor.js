@@ -1,21 +1,57 @@
 // dpx_deckDoc live editor — vanilla JS, no build step, no framework.
+// Device -> Pages -> Buttons tree: pick a device first, then a page.
 
+const deviceNavEl = document.getElementById("device-nav");
 const deckEl = document.getElementById("deck");
 const panelEl = document.getElementById("side-panel");
 const navEl = document.getElementById("page-nav");
 
+let devices = [];
+let currentDevice = null;
 let manifest = [];
 let annotations = {};
 let pageTitles = {};
 let currentPage = null;
 let selectedBtn = null; // {page,row,col} currently in edit mode, or null
 
-async function loadData() {
-  const res = await fetch("/api/data");
+function imgUrl(page, row, col) {
+  return `/images/${currentDevice}/${page}/${row}-${col}.png`;
+}
+
+async function loadDevices() {
+  const res = await fetch("/api/devices");
+  devices = await res.json();
+}
+
+async function loadDeviceData(slug) {
+  const res = await fetch(`/api/data?device=${encodeURIComponent(slug)}`);
   const data = await res.json();
   manifest = data.manifest;
   annotations = data.annotations;
   pageTitles = data.pageTitles ?? {};
+}
+
+function renderDeviceNav() {
+  deviceNavEl.innerHTML = "";
+  for (const d of devices) {
+    const btn = document.createElement("button");
+    btn.className = d.slug === currentDevice ? "active" : "";
+    btn.innerHTML = `<span class="device-name">${d.slug}</span><span class="device-meta">${d.pageCount} pages · ${d.buttonCount} buttons</span>`;
+    btn.addEventListener("click", () => selectDevice(d.slug));
+    deviceNavEl.appendChild(btn);
+  }
+}
+
+async function selectDevice(slug) {
+  currentDevice = slug;
+  selectedBtn = null;
+  await loadDeviceData(slug);
+  const pages = pagesFromManifest();
+  currentPage = pages[0] ?? null;
+  renderDeviceNav();
+  renderNav();
+  renderDeck();
+  renderPanelEmpty();
 }
 
 function pagesFromManifest() {
@@ -38,7 +74,7 @@ function renderNav() {
     thumb.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     for (const e of entries) {
       const img = document.createElement("img");
-      img.src = `/images/${e.page}/${e.row}-${e.col}.png`;
+      img.src = imgUrl(e.page, e.row, e.col);
       img.style.gridRow = e.row + 1;
       img.style.gridColumn = e.col + 1;
       thumb.appendChild(img);
@@ -90,7 +126,7 @@ function renderDeck() {
     }
 
     const img = document.createElement("img");
-    img.src = `/images/${e.page}/${e.row}-${e.col}.png`;
+    img.src = imgUrl(e.page, e.row, e.col);
     img.alt = `${e.row}/${e.col}`;
     cell.appendChild(img);
 
@@ -158,6 +194,7 @@ function renderPanelEdit(e, ann) {
     ev.preventDefault();
     const fd = new FormData(ev.target);
     const payload = {
+      device: currentDevice,
       page: e.page,
       row: e.row,
       col: e.col,
@@ -203,12 +240,12 @@ async function renderTopbar() {
 }
 
 async function init() {
-  await Promise.all([loadData(), renderTopbar()]);
-  const pages = pagesFromManifest();
-  currentPage = pages[0] ?? null;
-  renderNav();
-  renderDeck();
-  renderPanelEmpty();
+  await Promise.all([loadDevices(), renderTopbar()]);
+  if (!devices.length) {
+    deviceNavEl.innerHTML = `<p class="empty-hint">No devices captured yet. Run: <code>node src/cli.js scrape --host &lt;ip&gt;</code></p>`;
+    return;
+  }
+  await selectDevice(devices[0].slug);
 }
 
 init();

@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.3.0] - 2026-09-22
+
+### Added
+- One-shot `scrape` command (`node src/cli.js scrape --host <ip>`) — pulls the config export, discovers every real page, captures every button, and merges prefill in a single run
+- Multi-device support: each Companion instance becomes a device under `devices/<slug>/`; live editor (`serve`) gained a device switcher (device → pages → buttons tree)
+- UI scaled up across the board (base font 17px, button tiles 96px) — was unreadably small at 100% browser zoom
+- GitHub repo created (`dubpixel/dpx_deckDoc`)
+
+### Fixed
+- **Major capture bug**: a full scrape previously captured only the first 2-3 pages and silently 0 buttons for everything else. Root cause, found and fixed: (1) Companion's tablet UI is one continuous scroller across all pages — `?page=N` doesn't jump there, every load starts at page 1; (2) it's sliding-window virtualized (rendered button count stays roughly constant while scrolling), so watching button count for "reached the bottom" falsely converges after 1-2 steps. Capture now does one continuous scroll pass per scrape, judged against real `scrollTop`/`scrollHeight`, not button counts — verified against all 99 pages of a real instance (3,168 buttons, full grids including blank slots)
+- Static handoff site's grid now preserves the full physical button grid (including blank slots) instead of shrinking to only the buttons that happened to capture
+
 ## [0.2.0] - 2026-09-22
 
 ### Added

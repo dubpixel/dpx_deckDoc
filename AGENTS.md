@@ -6,21 +6,23 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.1.0 scaffold in progress (2026-09-22)
+**Status:** v0.2.0, functional end-to-end against a real 99-page Companion instance (2026-09-22)
 **Branch:** `feature/deckdoc-scaffold`
-**Version File:** `VERSION` (currently 0.1.0)
+**Version File:** `VERSION` (currently 0.2.0)
 
 ### Architecture (2-minute summary)
 
-Auto-generated documentation tool for Bitfocus Companion control-surface setups. Captures every page of a Companion instance as button images, attaches an annotation to each button (what it does, what it triggers), and builds a static website to browse the annotated pages — so a rig can be handed off to someone who didn't build it without a live walkthrough. Node.js CLI, no build step; output is plain HTML/CSS/JS.
+Auto-generated documentation tool for Bitfocus Companion control-surface setups. `scrape` points at one Companion instance and does the whole capture in one shot: pulls the config export, discovers every real page, captures every button's actual rendered bitmap from the web UI, and pre-fills structured annotations. Each Companion instance is a **device**; devices live side by side under `devices/<slug>/`, forming a device → pages → buttons tree. `serve` is a live editable local app for writing annotations (Heading/Body/Notice/Note/Command); `build` freezes one device into a dependency-free static handoff site. Node.js CLI, no build step; output is plain HTML/CSS/JS.
 
 | Component | Tech/Location | Purpose | Notes |
 |-----------|---------------|---------|-------|
-| Satellite capture | Node (`net` sockets) / `src/capture/satellite.js` | Connect as a virtual Satellite device, stream real rendered button bitmaps over TCP | Never run against a host without an explicit `--host` flag from the user |
-| Screenshot capture | Playwright / `src/capture/screenshot.js` | Screenshot the Companion web UI page-by-page | Non-invasive alternative; doesn't touch Companion's control state |
-| Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` JSON export into per-button connection/action metadata | Used to pre-fill annotations |
-| Annotation store | Node / `src/annotate/store.js` | Reads/writes `output/annotations.json`; merges config-derived prefill without clobbering hand edits | |
-| Site generator | Node / `src/site/build.js` | Builds the static viewer site from images + annotations | No bundler; `<script type="module">` files referenced directly |
+| One-shot scrape | Node / `src/scrape.js` | Pulls the config export, discovers all pages, captures every button, merges prefill — the primary entry point | `node src/cli.js scrape --host <ip> [--device <name>]` |
+| Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper |
+| Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
+| Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
+| Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher, page nav with thumbnails, click-to-edit side panel | `node src/cli.js serve --out devices` |
+| Site generator | Node / `src/site/build.js` + `site-template/` | Builds one device's frozen static handoff site | No bundler; plain `<script>` (not `type="module"` — fails under `file://`, see Gotchas) |
+| Satellite capture (reference only) | Node (`net` sockets) / `src/capture/satellite.js` | Protocol-correct Satellite API client, not part of the primary pipeline | Dropped as unnecessary — see Key Decisions |
 | Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
 
 ### Agent Rules (for this repo)
@@ -45,9 +47,10 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 ### Critical Constraints
 
 **MUST HAVE:**
-- ✅ Two working capture backends (Satellite API + screenshot), interchangeable via CLI flag
+- ✅ One-shot `scrape` captures a whole instance correctly (all pages, full grid, including blank slots)
 - ✅ Annotation prefill from `.companionconfig` export that never overwrites a hand-edited entry
-- ✅ Generated site works by opening `index.html` directly — no server or build step required to view it
+- ✅ Static handoff site (`build`) works by opening `index.html` directly — no server or build step required to view it
+- ✅ Multiple Companion instances live side by side as separate devices under `devices/`
 
 **DO NOT:**
 - ❌ Auto-connect to any Companion instance without an explicit `--host`/URL from the user
@@ -63,22 +66,26 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 ### Gotchas & Landmines
 
-1. **Satellite API `ADD-SUB` requires Companion >= ~4.3.0:** Confirmed 2026-09-22 against the dev instance (10.196.11.26, Companion 4.2.5) — it rejects `ADD-SUB` with `Unknown command`. Companion's changelog lists "Expand satellite api to cover full module and elgato plugin functionality" under v4.3.0. `captureSatellitePage()` (`src/capture/satellite.js`) subscribes read-only via `ADD-SUB`, never `ADD-DEVICE` (which would register a real phantom device/surface — deliberately avoided). On older instances, use screenshot capture instead.
-2. **HTTP REST API can't read config:** Companion's plain HTTP remote-control API (`/api/location/...`) can trigger/style buttons but cannot read button config or export images — that's why capture uses the Satellite API or screenshots instead.
-3. **Config prefill must be non-destructive:** `store.js` must check for an existing hand-written annotation before writing a prefill — always merge, never blind-overwrite `output/annotations.json`.
-4. **Screenshot mode captures whole pages, not individual buttons:** `captureScreenshotPage()` produces one image per Companion page (the tablet-view DOM doesn't cleanly give per-button crops yet), but the annotation store and site generator (`src/site/build.js`) currently assume one image per button — that model fits Satellite-API capture but not screenshot capture. **Unresolved TODO**, not yet fixed: either (a) crop individual button regions from the page screenshot via Playwright element bounding boxes per button, or (b) redesign the viewer to overlay per-button hotspots on a single page image instead of separate cropped images. Screenshot mode was verified capturing real button content correctly (2026-09-22) — the gap is purely in how the site generator consumes it, not in the capture itself.
-5. **`.companionconfig` schema is unverified:** `src/config/parseExport.js`'s field-name assumptions (`pages` / `controls` / `steps.0.action_sets.down`) are best-guess based on Companion's general export/import structure — Bitfocus doesn't publish a stable schema, and it hasn't been checked against a real export pulled from the dev instance yet. Validate/adjust field names against an actual `.companionconfig` file before relying on annotation prefill.
-6. **Companion's own Satellite server has a bug worth knowing about:** an unrecognized command returns the literal unexpanded template string `Unknown command: ${cmd.toUpperCase()}` instead of the actual command name — don't rely on that error text to identify which command was rejected; you already know what you sent.
+1. **The tablet UI is ONE continuous scroller across ALL pages — `?page=N` does not jump there.** Confirmed 2026-09-22 the hard way: every load starts at page 1, and you must scroll down through every page in between to reach page N. A capture loop that reloads `?page=N` per page and expects to land there will silently capture nothing (or the wrong page's leftover DOM) for everything past the first couple of pages.
+2. **It's sliding-window virtualized, not append-only — don't judge "done scrolling" by button count.** The rendered `.button-control` COUNT stays roughly constant as you scroll (old rows unmount as new ones mount); it never grows toward some total, so "count stopped increasing" triggers a false-positive stop after 1-2 steps. The correct signal is the scroller's own `scrollTop + clientHeight >= scrollHeight`. Both of the above cost real debugging time when a first full scrape captured only pages 1-3 out of 99 — see `src/capture/screenshot.js`'s header comment for the full story.
+3. **Because of #1, capturing many pages is a single continuous scroll pass, not N separate captures.** `captureManyPages()` loads once and scrolls through the whole instance in one pass, collecting every page's buttons as they pass by — this is also far faster than re-scrolling from the top per page (a 99-page instance takes ~20s total, not 99× that).
+4. **HTTP REST API can't read config:** Companion's plain HTTP remote-control API (`/api/location/...`) can trigger/style buttons but cannot read button config or export images — capture goes through the web UI DOM instead.
+5. **Config prefill must be non-destructive:** `store.js` must check for an existing hand-written annotation before writing a prefill — always merge, never blind-overwrite `<device>/annotations.json`.
+6. **`<script type="module">` fails under `file://`** (CORS) — the static handoff site (`build`) uses a plain `<script>` tag, since `viewer.js` has no imports anyway.
+7. **`.companionconfig` schema, confirmed against a real export** (Companion 4.3.4, export version 12, pulled from `/int/export/full`): gzip-compressed JSON; `pages[n].controls[row][col]` (nested by row then col, not a flat key); actions at `control.steps["0"].action_sets.down`, each `{type:"action", definitionId, connectionId, options}` — `definitionId` is the action name, not `action`/`actionId`; `data.instances[connectionId].label` gives the connection's display name. Non-`"button"` control types (`pageup`/`pagedown`/`pagenum`) are Companion's built-in page-nav controls, not configurable buttons.
+8. **Satellite API `ADD-SUB` requires Companion >= ~4.3.0 AND an explicit "Subscriptions" setting enabled** — confirmed both gates independently (an older instance rejected the command entirely; a 4.3.4 instance understood it but replied `Subscriptions not enabled`). Moot now since Satellite capture was dropped from the primary pipeline (see Key Decisions), but kept as a protocol-correct reference in `src/capture/satellite.js`.
 
 ### Common Operations
 
-**Capture a Companion instance:** `node src/cli.js capture --mode satellite|screenshot --host <ip> --out output/`
+**Scrape an entire Companion instance (the normal path):** `node src/cli.js scrape --host <ip> [--device <name>] [--out devices]` — one shot: pulls the export, discovers every page, captures every button, merges prefill.
 
-**Pre-fill annotations from a config export:** `node src/cli.js annotate --config path/to/export.companionconfig`
+**Author annotations live:** `node src/cli.js serve --out devices` → `http://localhost:4321`, device switcher + click-to-edit.
 
-**Build the viewer site:** `node src/cli.js build` → outputs `output/site/index.html`
+**Freeze one device to a static handoff site:** `node src/cli.js build --out devices/<slug>` → `devices/<slug>/site/index.html`.
 
-**Known test instance:** A working Companion instance is available at `10.196.11.26` for development/testing of both capture backends. Treat it as the dev target unless told otherwise — do not assume it's safe to run destructive/state-changing commands against it beyond capture.
+**Lower-level primitives** (still useful for ad hoc single-page work): `capture --mode screenshot --url <tablet-url> --page N --out <dir>`, `annotate --config <export-file> --out <dir>`.
+
+**Known test instances:** `10.196.11.26` (Companion 4.2.5) and `127.0.0.1:8000` (Companion 4.3.4, same show config, local dev machine) are available for development/testing. Treat both as real dev targets unless told otherwise — do not assume it's safe to run destructive/state-changing commands against either beyond capture.
 
 ### Reference
 

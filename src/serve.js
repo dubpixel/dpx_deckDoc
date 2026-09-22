@@ -1,14 +1,23 @@
 // ================================================================================
-// LOCAL EDIT SERVER - live editable viewer
+// LOCAL EDIT SERVER - live editable viewer, multi-device
 // ================================================================================
 // PROJECT: dpx_deckDoc
 // ================================================================================
 //
 // File: src/serve.js
-// Purpose: Serves the captured images + annotations as a live, editable
-//          local web app instead of a frozen static site. Annotation edits
-//          POST back here and persist straight to output/annotations.json.
+// Purpose: Serves captured images + annotations as a live, editable local
+//          web app instead of a frozen static site. Annotation edits POST
+//          back here and persist straight to <device>/annotations.json.
 //          Plain Node `http`, no framework, no bundler.
+//
+//          Multi-device: `outDir` (the CLI's `--out`, default "devices") is
+//          treated as a devices ROOT — each immediate subdirectory that
+//          contains a manifest.json is one device (one Companion instance,
+//          as written by `scrape`). If `outDir` itself directly contains a
+//          manifest.json (the old single-target `capture`/`annotate`
+//          workflow), it's treated as one implicit device named after its
+//          own directory — so existing single-device output still works
+//          unchanged.
 // Dependencies: none
 //
 // ================================================================================
@@ -32,22 +41,48 @@ const MIME = {
   ".png": "image/png",
 };
 
-async function loadManifest(outDir) {
+async function loadManifest(dir) {
   try {
-    return JSON.parse(await fs.readFile(path.join(outDir, "manifest.json"), "utf8"));
+    return JSON.parse(await fs.readFile(path.join(dir, "manifest.json"), "utf8"));
   } catch (err) {
     if (err.code === "ENOENT") return [];
     throw err;
   }
 }
 
-async function loadPageTitles(outDir) {
+async function loadPageTitles(dir) {
   try {
-    return JSON.parse(await fs.readFile(path.join(outDir, "pages.json"), "utf8"));
+    return JSON.parse(await fs.readFile(path.join(dir, "pages.json"), "utf8"));
   } catch (err) {
     if (err.code === "ENOENT") return {};
     throw err;
   }
+}
+
+/**
+ * Resolves the set of devices under a root: { slug -> absolute dir path }.
+ */
+async function resolveDevices(root) {
+  const devices = {};
+  if (fsSync.existsSync(path.join(root, "manifest.json"))) {
+    devices[path.basename(path.resolve(root))] = root;
+    return devices;
+  }
+  let entries;
+  try {
+    entries = await fs.readdir(root, { withFileTypes: true });
+  } catch (err) {
+    if (err.code === "ENOENT") return devices;
+    throw err;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const candidate = path.join(root, entry.name);
+    if (fsSync.existsSync(path.join(candidate, "manifest.json"))) {
+      devices[entry.name] = candidate;
+    }
+  }
+  return devices;
 }
 
 function send(res, status, body, contentType) {
@@ -68,7 +103,7 @@ async function serveStatic(res, dir, reqPath) {
 
 /**
  * @param {object} opts
- * @param {string} opts.outDir
+ * @param {string} opts.outDir - devices root (or a single device dir, see file header)
  * @param {number} [opts.port]
  */
 export async function serve({ outDir, port = 4321 }) {
@@ -79,11 +114,27 @@ export async function serve({ outDir, port = 4321 }) {
       return send(res, 200, JSON.stringify(getMeta()), MIME[".json"]);
     }
 
+    if (url.pathname === "/api/devices" && req.method === "GET") {
+      const devices = await resolveDevices(outDir);
+      const summaries = await Promise.all(
+        Object.entries(devices).map(async ([slug, dir]) => {
+          const manifest = await loadManifest(dir);
+          const pageCount = new Set(manifest.map((e) => e.page)).size;
+          return { slug, pageCount, buttonCount: manifest.length };
+        })
+      );
+      return send(res, 200, JSON.stringify(summaries), MIME[".json"]);
+    }
+
     if (url.pathname === "/api/data" && req.method === "GET") {
+      const devices = await resolveDevices(outDir);
+      const slug = url.searchParams.get("device");
+      const dir = devices[slug];
+      if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${slug}"` }), MIME[".json"]);
       const [manifest, annotations, pageTitles] = await Promise.all([
-        loadManifest(outDir),
-        loadAnnotations(outDir),
-        loadPageTitles(outDir),
+        loadManifest(dir),
+        loadAnnotations(dir),
+        loadPageTitles(dir),
       ]);
       return send(res, 200, JSON.stringify({ manifest, annotations, pageTitles }), MIME[".json"]);
     }
@@ -100,15 +151,22 @@ export async function serve({ outDir, port = 4321 }) {
       if (typeof edit.page !== "number" || typeof edit.row !== "number" || typeof edit.col !== "number") {
         return send(res, 400, JSON.stringify({ error: "page/row/col are required numbers" }), MIME[".json"]);
       }
-      const annotations = await loadAnnotations(outDir);
+      const devices = await resolveDevices(outDir);
+      const dir = devices[edit.device];
+      if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${edit.device}"` }), MIME[".json"]);
+      const annotations = await loadAnnotations(dir);
       const updated = applyManualEdit(annotations, edit);
-      await saveAnnotations(outDir, annotations);
+      await saveAnnotations(dir, annotations);
       return send(res, 200, JSON.stringify({ key: keyFor(edit.page, edit.row, edit.col), ...updated }), MIME[".json"]);
     }
 
     if (url.pathname.startsWith("/images/")) {
-      const imgPath = path.join(outDir, url.pathname.replace(/^\/images\//, "images/"));
-      if (!imgPath.startsWith(path.join(outDir, "images"))) return send(res, 403, "Forbidden", "text/plain");
+      const devices = await resolveDevices(outDir);
+      const [, , slug, ...rest] = url.pathname.split("/"); // "", "images", "<device>", "<page>", "<row-col.png>"
+      const dir = devices[slug];
+      if (!dir) return send(res, 404, "Unknown device", "text/plain");
+      const imgPath = path.join(dir, "images", ...rest);
+      if (!imgPath.startsWith(path.join(dir, "images"))) return send(res, 403, "Forbidden", "text/plain");
       if (!fsSync.existsSync(imgPath)) return send(res, 404, "Not found", "text/plain");
       return send(res, 200, await fs.readFile(imgPath), "image/png");
     }

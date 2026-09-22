@@ -8,6 +8,9 @@ npm-debug.log*
 output/
 output*/
 
+# Captured device data (scrape output — real button images/config, not source)
+devices/
+
 # Editor workspace files (not shared team config)
 *.code-workspace
 

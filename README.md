@@ -6,9 +6,9 @@
 <!-- PROJECT SHIELDS -->
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.3.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square)
-![Status](https://img.shields.io/badge/status-in--development-yellow?style=flat-square)
+![Status](https://img.shields.io/badge/status-functional-brightgreen?style=flat-square)
 
 </div>
 <!-- PROJECT LOGO -->
@@ -106,13 +106,14 @@ See the full concept doc on Notion (`dpx_labs / dpx_deckDoc`) for background and
 ## Usage
 
 ```bash
-node src/cli.js capture --mode screenshot --url <companion-url> --out output/
-node src/cli.js annotate --config path/to/export.companionconfig
-node src/cli.js serve --out output/    # live, editable authoring app
-node src/cli.js build --out output/    # frozen static handoff site
+node src/cli.js scrape --host <companion-ip> --device <name>   # one shot: capture everything
+node src/cli.js serve --out devices                            # live, editable authoring app
+node src/cli.js build --out devices/<name>                     # frozen static handoff site
 ```
 
-`serve` opens a local editable app (`http://localhost:4321`) for annotating buttons — hover for a preview, click to edit Heading / Body / Notice / Note / Command, saves straight to `output/annotations.json`. `build` freezes everything into `output/site/index.html` — open it directly, no server needed, for handing off to someone else.
+`scrape` points at one Companion instance and does the whole thing: pulls the config export, discovers every real page, captures every button's actual rendered bitmap, and pre-fills annotations — no per-page looping. Each instance becomes a **device** under `devices/<name>/`, so multiple rigs live side by side (device → pages → buttons).
+
+`serve` opens a local editable app (`http://localhost:4321`) with a device switcher — hover a button for a preview, click to edit Heading / Body / Notice / Note / Command, saves straight to `devices/<name>/annotations.json`. `build` freezes one device into `devices/<name>/site/index.html` — open it directly, no server needed, for handing off to someone else.
 
 <!-- REFLECTION -->
 ## Reflection
@@ -133,8 +134,9 @@ node src/cli.js build --out output/    # frozen static handoff site
 - [x] Structured annotation fields (Heading / Body / Notice / Note / Command) with non-destructive prefill merge
 - [x] Live editable local app (`serve`) + frozen static handoff site (`build`)
 - [x] Page thumbnails + real page titles in navigation
+- [x] One-shot `scrape` command — discovers and captures an entire instance in one pass, verified against a real 99-page rig
+- [x] Multi-device support — device → pages → buttons tree, device switcher in the live editor
 - [ ] Manual/docs webpage for the tool itself — [issue #1](https://github.com/dubpixel/dpx_deckDoc/issues/1)
-- [ ] Satellite API backend kept as a reference implementation, not part of the primary pipeline
 
 See the [open issues](https://github.com/dubpixel/dpx_deckDoc/issues) for a full list of proposed features (and known issues).
 
