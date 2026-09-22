@@ -4,112 +4,104 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ---
 
-## PROJECT: [Project Name]
+## PROJECT: dpx_deckDoc
 
-**Instructions for customizing this section:**
-Replace the placeholders below with your project's specific information. Remove subsections that don't apply. This template is intentionally verbose — prune what you don't need.
-
-**Status:** [e.g., v0.1.0 complete (2026-06-05) ✅]  
-**Branch:** [e.g., `feature/core-app-implementation`]  
-**Version File:** [e.g., `VERSION` (currently 0.1.0)]
+**Status:** v0.2.0, functional end-to-end against a real 99-page Companion instance (2026-09-22)
+**Branch:** `feature/deckdoc-scaffold`
+**Version File:** `VERSION` (currently 0.2.0)
 
 ### Architecture (2-minute summary)
 
-[One-paragraph overview: what this project does, core tech, how it works]
-
-**Example:** "Browser-based monitoring tool for Phabrix QX waveform monitors. Pure vanilla JS (no frameworks, no build step, no CDN). Connects to QX REST API on port 8080, polls status/logs every 2-5s, stores settings in localStorage. Works offline in airgapped broadcast facilities."
+Auto-generated documentation tool for Bitfocus Companion control-surface setups. `scrape` points at one Companion instance and does the whole capture in one shot: pulls the config export, discovers every real page, captures every button's actual rendered bitmap from the web UI, and pre-fills structured annotations. Each Companion instance is a **device**; devices live side by side under `devices/<slug>/`, forming a device → pages → buttons tree. `serve` is a live editable local app for writing annotations (Heading/Body/Notice/Note/Command); `build` freezes one device into a dependency-free static handoff site. Node.js CLI, no build step; output is plain HTML/CSS/JS.
 
 | Component | Tech/Location | Purpose | Notes |
 |-----------|---------------|---------|-------|
-| [Component 1] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Component 2] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Component 3] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Reference docs] | [Format] / `path/` | [What it is] | **Source of truth for [topic]** |
+| One-shot scrape | Node / `src/scrape.js` | Pulls the config export, discovers all pages, captures every button, merges prefill — the primary entry point | `node src/cli.js scrape --host <ip> [--device <name>]` |
+| Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper |
+| Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
+| Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
+| Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher, page nav with thumbnails, click-to-edit side panel, "+ New Device" scrapes from the browser (no CLI needed), "Manage Pages" include/exclude checkboxes | `node src/cli.js serve --out devices` |
+| Page selection | Node / `src/pageSelection.js` | Per-page include/exclude flags (`<device>/page-selection.json`) — excluded pages are hidden from the editor nav and skipped by `build` | Included by default; only explicit `false` excludes |
+| Export from browser | `src/serve.js` `/api/build` + `/built/<device>/...` | Runs `buildSite()` server-side and serves the result back so the frozen static site can be opened without touching the CLI | "Export Site" button in the editor header |
+| Label override | `annotations[key].labelOverride` | Replaces the captured on-image text with a fixed override, rendered as an overlay on the button in both the editor and static site | Never auto-filled; purely a manual annotation field |
+| Regression tests | Node built-in `node:test` / `test/` | Covers the annotation store, config parser (schema-accurate fixture), manifest/page-selection helpers, `buildSite()`, and `serve.js`'s real HTTP routes | `npm test` — zero added dependencies. Capture itself is not unit-tested (browser/DOM-coupled); verify against a real instance |
+| Site generator | Node / `src/site/build.js` + `site-template/` | Builds one device's frozen static handoff site | No bundler; plain `<script>` (not `type="module"` — fails under `file://`, see Gotchas) |
+| Satellite capture (reference only) | Node (`net` sockets) / `src/capture/satellite.js` | Protocol-correct Satellite API client, not part of the primary pipeline | Dropped as unnecessary — see Key Decisions |
+| Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
 
 ### Agent Rules (for this repo)
 
 **Before ANY code change:**
-1. Work from `[main/master]` branch; create feature branch: `feature/brief-description`
+1. Work from `main`; create feature branch: `feature/brief-description`
 2. Bump VERSION file per semantic versioning (AGENTS.md §1)
 3. Create git commit for version bump, tag it: `git tag vX.Y.Z`
 
 **While coding:**
-- [Project-specific rule or constraint]
-- [Technology requirement or restriction]
-- [Testing/validation requirement]
+- No build step anywhere: the CLI runs directly with `node`, no TS compile/bundle step; the generated viewer site is hand-authored HTML/CSS/JS, opened or served as-is
+- Capture backends stay pluggable and interchangeable — both write to the same `output/images/` + `manifest.json` layout so `annotate`/`build` don't care which one ran
+- Never run the Satellite API capture against a Companion host without an explicit, user-supplied `--host` — no default/guessed target, no auto-discovery
 - Keep changes small, test before committing
 - File header per AGENTS.md §3
 
 **When done:**
 - Update CHANGELOG.md with feature list
 - Create PR per AGENTS.md §1 template
-- [Any project-specific verification steps]
+- Run the relevant CLI command(s) end-to-end against real output before calling a step done
+- Run `npm test` before committing; add/update a regression test for any bug fixed or schema/route touched
 
 ### Critical Constraints
 
 **MUST HAVE:**
-- ✅ [Required capability or dependency]
-- ✅ [Required technology or approach]
-- ✅ [Required compatibility or standard]
+- ✅ One-shot `scrape` captures a whole instance correctly (all pages, full grid, including blank slots)
+- ✅ Annotation prefill from `.companionconfig` export that never overwrites a hand-edited entry
+- ✅ Static handoff site (`build`) works by opening `index.html` directly — no server or build step required to view it
+- ✅ Multiple Companion instances live side by side as separate devices under `devices/`
 
 **DO NOT:**
-- ❌ [Forbidden action or technology]
-- ❌ [Assumption that must be avoided]
-- ❌ [Hard-coded value or static configuration]
-- ❌ [Change that requires explicit verification]
+- ❌ Auto-connect to any Companion instance without an explicit `--host`/URL from the user
+- ❌ Add a frontend framework or bundler to the viewer site — plain HTML/CSS/JS only
+- ❌ Overwrite a hand-written annotation with a config-export prefill
 
 ### Key Decisions
 
-- **[Decision Title]:** [Explanation - why this approach was chosen over alternatives]
-- **[Decision Title]:** [Rationale for architecture/design choice]
-- **[Decision Title]:** [Context for future agents]
-
-**Examples:**
-- **Dual README templates:** Hardware needs schematics/BOMs, software needs API docs - fundamentally different documentation needs
-- **No WebSocket:** QX REST API is HTTP-only. Polling is the only option.
-- **Bootstrap on connect:** Device specs vary by boot mode - auto-detect on initial connection
+- **Satellite API capture dropped (2026-09-22):** Originally planned as the "clean" capture path, but testing showed it's unnecessary — Companion's `/int/export/full` export already gives annotation data, and the tablet web UI's DOM gives accurate *rendered* button bitmaps (the export's own `png64` field only covers 47/253 real buttons, and it's just a raw uploaded icon, not the actual rendered composite with text/color/state baked in — not a substitute for the real thing). The web UI capture also doesn't require enabling Companion's "Subscriptions" setting the way Satellite `ADD-SUB` does. `src/capture/satellite.js` is kept as a reference implementation (protocol-correct, tested against real instances) but is not part of the primary pipeline.
+- **Web UI DOM extraction, not screenshotting:** `src/capture/screenshot.js` doesn't actually screenshot — it loads `tablet.html?page=N` and reads each `.button-control` element's `title="Button P/R/C"` attribute plus its inlined `background-image: url("data:image/png;base64,...")` CSS, extracting the exact rendered per-button bitmap directly from the DOM. No cropping guesswork, no dependency on viewport/zoom.
+- **Pre-fill annotations from config export:** Companion's `.companionconfig` export already has connection/action names per button; hand-writing every annotation from scratch is unnecessary busywork.
+- **No build step, vanilla output:** Matches dpx broadcast-tooling philosophy (see Development Philosophy below) — minimal, auditable, works offline, nothing to compile before viewing the generated docs on-site.
 
 ### Gotchas & Landmines
 
-1. **[Issue Title]:** [Description]. [Workaround or solution]. [Where to look for more info]
-2. **[Issue Title]:** [Description]. [Workaround or solution].
-3. **[Issue Title]:** [Description]. [Always check/verify X before doing Y].
-
-**Examples:**
-- **CORS issue:** API calls from `file://` origin fail. Use launch script or Python server, not direct open.
-- **Boot modes matter:** Device can boot in different modes. Different endpoints available per mode. Always auto-detect on connect.
-- **Manual is authority:** If specs seem odd, check `/docs/manual.pdf` Ch.X. Don't guess.
+1. **The tablet UI is ONE continuous scroller across ALL pages — `?page=N` does not jump there.** Confirmed 2026-09-22 the hard way: every load starts at page 1, and you must scroll down through every page in between to reach page N. A capture loop that reloads `?page=N` per page and expects to land there will silently capture nothing (or the wrong page's leftover DOM) for everything past the first couple of pages.
+2. **It's sliding-window virtualized, not append-only — don't judge "done scrolling" by button count.** The rendered `.button-control` COUNT stays roughly constant as you scroll (old rows unmount as new ones mount); it never grows toward some total, so "count stopped increasing" triggers a false-positive stop after 1-2 steps. The correct signal is the scroller's own `scrollTop + clientHeight >= scrollHeight`. Both of the above cost real debugging time when a first full scrape captured only pages 1-3 out of 99 — see `src/capture/screenshot.js`'s header comment for the full story.
+3. **Because of #1, capturing many pages is a single continuous scroll pass, not N separate captures.** `captureManyPages()` loads once and scrolls through the whole instance in one pass, collecting every page's buttons as they pass by — this is also far faster than re-scrolling from the top per page (a 99-page instance takes ~20s total, not 99× that).
+4. **HTTP REST API can't read config:** Companion's plain HTTP remote-control API (`/api/location/...`) can trigger/style buttons but cannot read button config or export images — capture goes through the web UI DOM instead.
+5. **Config prefill must be non-destructive:** `store.js` must check for an existing hand-written annotation before writing a prefill — always merge, never blind-overwrite `<device>/annotations.json`.
+6. **`<script type="module">` fails under `file://`** (CORS) — the static handoff site (`build`) uses a plain `<script>` tag, since `viewer.js` has no imports anyway.
+7. **`.companionconfig` schema, confirmed against a real export** (Companion 4.3.4, export version 12, pulled from `/int/export/full`): gzip-compressed JSON; `pages[n].controls[row][col]` (nested by row then col, not a flat key); actions at `control.steps["0"].action_sets.down`, each `{type:"action", definitionId, connectionId, options}` — `definitionId` is the action name, not `action`/`actionId`; `data.instances[connectionId].label` gives the connection's display name. Non-`"button"` control types (`pageup`/`pagedown`/`pagenum`) are Companion's built-in page-nav controls, not configurable buttons.
+8. **Satellite API `ADD-SUB` requires Companion >= ~4.3.0 AND an explicit "Subscriptions" setting enabled** — confirmed both gates independently (an older instance rejected the command entirely; a 4.3.4 instance understood it but replied `Subscriptions not enabled`). Moot now since Satellite capture was dropped from the primary pipeline (see Key Decisions), but kept as a protocol-correct reference in `src/capture/satellite.js`.
+9. **The `[hidden]` attribute needs an explicit CSS override if the element also has a class-based `display` rule.** A modal styled `.modal-overlay { display: flex; ... }` stays visible even with `hidden` set on the element — the class selector and the browser's built-in `[hidden] { display: none }` UA rule have equal specificity, and the later-loaded stylesheet (yours) wins. Fix: `[hidden] { display: none !important; }` near the top of `editor.css`. Cost real time — both modals appeared stuck open on first load until this was added.
 
 ### Common Operations
 
-**[Operation 1 - e.g., Create new project]:** `./script.sh` (interactive prompts for X/Y/Z)
+**Scrape an entire Companion instance (the normal path):** `node src/cli.js scrape --host <ip> [--device <name>] [--out devices]` — one shot: pulls the export, discovers every page, captures every button, merges prefill.
 
-**[Operation 2 - e.g., Modify behavior]:** Edit `path/to/file.ext` - all logic centralized
+**Author annotations live:** `node src/cli.js serve --out devices` → `http://localhost:4321`, device switcher + click-to-edit.
 
-**[Operation 3 - e.g., Add components]:** Add to `path/`, update `config.ext` if special handling needed
+**Freeze one device to a static handoff site:** `node src/cli.js build --out devices/<slug>` → `devices/<slug>/site/index.html`.
 
-**[Operation 4 - e.g., Template processing]:**
-- [Scenario A]: `input-A.ext` → `output.ext`
-- [Scenario B]: `input-B.ext` → `output.ext`  
-- [Always]: `.git` and `.env` excluded from copy
+**Lower-level primitives** (still useful for ad hoc single-page work): `capture --mode screenshot --url <tablet-url> --page N --out <dir>`, `annotate --config <export-file> --out <dir>`.
+
+**Run the regression suite:** `npm test`.
+
+**Known test instances:** `10.196.11.26` (Companion 4.2.5) and `127.0.0.1:8000` (Companion 4.3.4, same show config, local dev machine) are available for development/testing. Treat both as real dev targets unless told otherwise — do not assume it's safe to run destructive/state-changing commands against either beyond capture.
 
 ### Reference
 
-See `/CONTEXT.md` for:
-- [Extended architecture details]
-- [Module/component specifications]
-- [Data schemas or API contracts]
-
-See `/.github/CONTEXT.md` for:
-- [API endpoint reference]
-- [Configuration specifications]
-- [Testing procedures]
+See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-mode ideas (tooltips vs. margin notes), and open TODOs.
 
 ### Development Philosophy
 
-[Optional: High-level principles for this project type]
-
-**Example:** "This is broadcast infrastructure tooling - reliability and simplicity trump features. Prefer vanilla JavaScript over frameworks. Keep dependencies minimal and auditable. Test in airgapped environments. Design for 24/7 unattended operation."
+This is broadcast infrastructure documentation tooling — reliability and simplicity trump features. Prefer vanilla JavaScript over frameworks for the generated site. Keep dependencies minimal and auditable (Playwright is the one exception, for screenshot capture). Never assume it's safe to write to a live Companion instance's control state — capture-only, read-only interactions with the target system.
 
 ---
 ## 0. Mid-Session Issue Triage (MANDATORY)

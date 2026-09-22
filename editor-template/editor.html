@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dpx_deckDoc editor</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <div class="dpx-topbar" id="dpx-topbar"></div>
+  <div class="device-bar">
+    <span class="device-bar-label">Device</span>
+    <nav id="device-nav"></nav>
+    <button id="new-device-btn" class="new-device-btn">+ New Device</button>
+  </div>
+  <header>
+    <h1>dpx_deckDoc</h1>
+    <nav id="page-nav"></nav>
+    <button id="manage-pages-btn" class="manage-pages-btn" hidden>Manage Pages</button>
+    <button id="export-btn" class="export-btn" hidden>Export Site</button>
+  </header>
+  <div id="export-status" class="export-status" hidden></div>
+
+  <main>
+    <div class="frame">
+      <div class="side-panel" id="side-panel">
+        <p class="empty-hint">Hover a button to preview its annotation.<br>Click a button to edit it.</p>
+      </div>
+      <div class="deck-wrap">
+        <div class="deck" id="deck"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- New Device modal -->
+  <div class="modal-overlay" id="new-device-modal" hidden>
+    <div class="modal">
+      <h2>Scrape a new device</h2>
+      <form id="new-device-form">
+        <label for="nd-host">Companion host / IP</label>
+        <input id="nd-host" name="host" placeholder="10.196.11.26" required>
+        <label for="nd-port">Web UI port</label>
+        <input id="nd-port" name="port" placeholder="8000">
+        <label for="nd-device">Device name (optional)</label>
+        <input id="nd-device" name="device" placeholder="defaults to the host">
+        <div class="modal-actions">
+          <button type="submit" class="save">Scrape</button>
+          <button type="button" class="cancel" id="nd-cancel">Cancel</button>
+        </div>
+      </form>
+      <pre id="nd-progress" class="scrape-progress" hidden></pre>
+    </div>
+  </div>
+
+  <!-- Manage Pages modal -->
+  <div class="modal-overlay" id="manage-pages-modal" hidden>
+    <div class="modal modal-wide">
+      <h2>Manage pages</h2>
+      <div class="manage-pages-actions">
+        <button type="button" id="select-all-btn">Select all</button>
+        <button type="button" id="select-none-btn">Select none</button>
+        <span class="empty-hint">Unchecked pages are hidden from the page nav and skipped by <code>build</code>.</span>
+      </div>
+      <div id="page-list"></div>
+      <div class="modal-actions">
+        <button type="button" class="save" id="mp-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
