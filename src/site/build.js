@@ -103,9 +103,13 @@ export async function buildSite({ outDir }) {
           a.note ? `data-note="${escapeAttr(a.note)}"` : "",
           a.command ? `data-command="${escapeAttr(a.command)}"` : "",
         ].join(" ");
+        const labelOverlay = a.labelOverride
+          ? `<div class="label-override">${escapeAttr(a.labelOverride)}</div>`
+          : "";
         return `
         <div class="btn" style="grid-row:${b.row + 1};grid-column:${b.col + 1}" data-loc="${b.row}/${b.col}" ${dataAttrs}>
           <img src="${b.src}" alt="button ${b.row}/${b.col}">
+          ${labelOverlay}
         </div>`;
       })
       .join("\n");

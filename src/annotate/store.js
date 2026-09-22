@@ -35,10 +35,11 @@ export function keyFor(page, row, col) {
  * @property {string} notice
  * @property {string} note
  * @property {string} command - raw technical prefill (connection/action names)
+ * @property {string} labelOverride - replaces the button's captured on-image text in the deck view; never auto-filled
  * @property {"prefilled"|"manual"} source
  */
 
-const BLANK = { heading: "", body: "", notice: "", note: "", command: "" };
+const BLANK = { heading: "", body: "", notice: "", note: "", command: "", labelOverride: "" };
 
 /**
  * Loads the annotation store from disk, or an empty object if it doesn't exist yet.
@@ -96,7 +97,7 @@ export function mergePrefill(annotations, buttonMetas) {
  * merges leave it alone.
  *
  * @param {Record<string, Annotation>} annotations - mutated in place
- * @param {{page:number, row:number, col:number, heading?:string, body?:string, notice?:string, note?:string, command?:string}} edit
+ * @param {{page:number, row:number, col:number, heading?:string, body?:string, notice?:string, note?:string, command?:string, labelOverride?:string}} edit
  */
 export function applyManualEdit(annotations, edit) {
   const key = keyFor(edit.page, edit.row, edit.col);
@@ -107,6 +108,7 @@ export function applyManualEdit(annotations, edit) {
     notice: edit.notice ?? existing.notice ?? "",
     note: edit.note ?? existing.note ?? "",
     command: edit.command ?? existing.command ?? "",
+    labelOverride: edit.labelOverride ?? existing.labelOverride ?? "",
     source: "manual",
   };
   return annotations[key];

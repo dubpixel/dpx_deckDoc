@@ -31,6 +31,7 @@ import { loadAnnotations, saveAnnotations, applyManualEdit, keyFor } from "./ann
 import { loadPageSelection, savePageSelection } from "./pageSelection.js";
 import { getMeta } from "./meta.js";
 import { scrapeDevice } from "./scrape.js";
+import { buildSite } from "./site/build.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EDITOR_DIR = path.join(__dirname, "..", "editor-template");
@@ -188,6 +189,42 @@ export async function serve({ outDir, port = 4321 }) {
         res.write(`__ERROR__ ${err.message}\n`);
       }
       return res.end();
+    }
+
+    if (url.pathname === "/api/build" && req.method === "POST") {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return send(res, 400, JSON.stringify({ error: "invalid JSON" }), MIME[".json"]);
+      }
+      const devices = await resolveDevices(outDir);
+      const dir = devices[body.device];
+      if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${body.device}"` }), MIME[".json"]);
+      try {
+        const result = await buildSite({ outDir: dir });
+        return send(res, 200, JSON.stringify({ ...result, url: `/built/${body.device}/index.html` }), MIME[".json"]);
+      } catch (err) {
+        return send(res, 500, JSON.stringify({ error: err.message }), MIME[".json"]);
+      }
+    }
+
+    if (url.pathname.startsWith("/built/")) {
+      const devices = await resolveDevices(outDir);
+      const [, , slug, ...rest] = url.pathname.split("/"); // "", "built", "<device>", "index.html" | "page-1.html" | ...
+      const dir = devices[slug];
+      if (!dir) return send(res, 404, "Unknown device", "text/plain");
+      const siteDir = path.join(dir, "site");
+      const filePath = path.join(siteDir, rest.length ? rest.join("/") : "index.html");
+      if (!filePath.startsWith(siteDir)) return send(res, 403, "Forbidden", "text/plain");
+      try {
+        const data = await fs.readFile(filePath);
+        return send(res, 200, data, MIME[path.extname(filePath)] ?? "application/octet-stream");
+      } catch {
+        return send(res, 404, "Not built yet — click Export first", "text/plain");
+      }
     }
 
     if (url.pathname === "/api/annotation" && req.method === "POST") {

@@ -7,6 +7,8 @@ const panelEl = document.getElementById("side-panel");
 const navEl = document.getElementById("page-nav");
 const manageBtn = document.getElementById("manage-pages-btn");
 const newDeviceBtn = document.getElementById("new-device-btn");
+const exportBtn = document.getElementById("export-btn");
+const exportStatusEl = document.getElementById("export-status");
 
 let devices = [];
 let currentDevice = null;
@@ -57,6 +59,8 @@ async function selectDevice(slug) {
   const pages = pagesFromManifest().filter(isIncluded);
   currentPage = pages[0] ?? pagesFromManifest()[0] ?? null;
   manageBtn.hidden = pagesFromManifest().length === 0;
+  exportBtn.hidden = pagesFromManifest().length === 0;
+  exportStatusEl.hidden = true;
   renderDeviceNav();
   renderNav();
   renderDeck();
@@ -129,7 +133,7 @@ function renderDeck() {
     cell.style.gridRow = e.row + 1;
     cell.style.gridColumn = e.col + 1;
     if (ann?.notice) cell.classList.add("has-notice");
-    if (ann && (ann.heading || ann.body || ann.notice || ann.note)) cell.classList.add("has-annotation");
+    if (ann && (ann.heading || ann.body || ann.notice || ann.note || ann.labelOverride)) cell.classList.add("has-annotation");
     if (selectedBtn && selectedBtn.page === e.page && selectedBtn.row === e.row && selectedBtn.col === e.col) {
       cell.classList.add("selected");
     }
@@ -138,6 +142,13 @@ function renderDeck() {
     img.src = imgUrl(e.page, e.row, e.col);
     img.alt = `${e.row}/${e.col}`;
     cell.appendChild(img);
+
+    if (ann?.labelOverride) {
+      const overlay = document.createElement("div");
+      overlay.className = "label-override";
+      overlay.textContent = ann.labelOverride;
+      cell.appendChild(overlay);
+    }
 
     cell.addEventListener("mouseenter", () => {
       if (!selectedBtn) renderPanelPreview(e, ann);
@@ -167,15 +178,17 @@ function renderPanelPreview(e, ann) {
     ${ann?.notice ? `<div class="notice">${escapeHtml(ann.notice)}</div>` : ""}
     ${ann?.note ? `<div class="note">${escapeHtml(ann.note)}</div>` : ""}
     ${ann?.command ? `<div class="command">${escapeHtml(ann.command)}</div>` : ""}
-    ${!ann || (!ann.heading && !ann.body && !ann.notice && !ann.note && !ann.command) ? `<p class="empty-hint">No annotation yet — click to add one.</p>` : ""}
+    ${!ann || (!ann.heading && !ann.body && !ann.notice && !ann.note && !ann.command && !ann.labelOverride) ? `<p class="empty-hint">No annotation yet — click to add one.</p>` : ""}
   `;
 }
 
 function renderPanelEdit(e, ann) {
-  const a = ann ?? { heading: "", body: "", notice: "", note: "", command: "" };
+  const a = ann ?? { heading: "", body: "", notice: "", note: "", command: "", labelOverride: "" };
   panelEl.innerHTML = `
     <div class="loc">Editing Page ${e.page} — ${e.row}/${e.col}</div>
     <form id="edit-form">
+      <label for="f-label">Label override — replaces the text shown on the button image</label>
+      <input id="f-label" name="labelOverride" value="${escapeAttr(a.labelOverride)}">
       <label for="f-heading">Heading</label>
       <input id="f-heading" name="heading" value="${escapeAttr(a.heading)}">
       <label for="f-body">Body — what this does, for humans</label>
@@ -212,6 +225,7 @@ function renderPanelEdit(e, ann) {
       notice: fd.get("notice") ?? "",
       note: fd.get("note") ?? "",
       command: fd.get("command") ?? "",
+      labelOverride: fd.get("labelOverride") ?? "",
     };
     const res = await fetch("/api/annotation", {
       method: "POST",
@@ -314,6 +328,29 @@ async function setAllPages(included) {
 }
 
 document.getElementById("manage-pages-btn").addEventListener("click", openManagePages);
+
+exportBtn.addEventListener("click", async () => {
+  exportBtn.disabled = true;
+  exportBtn.textContent = "Exporting...";
+  exportStatusEl.hidden = true;
+  try {
+    const res = await fetch("/api/build", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device: currentDevice }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error ?? "build failed");
+    exportStatusEl.hidden = false;
+    exportStatusEl.innerHTML = `Exported ${result.pageCount} page(s), ${result.buttonCount} button(s) — <a href="${result.url}" target="_blank" rel="noopener">open the built site</a>`;
+  } catch (err) {
+    exportStatusEl.hidden = false;
+    exportStatusEl.textContent = `Export failed: ${err.message}`;
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.textContent = "Export Site";
+  }
+});
 document.getElementById("mp-done").addEventListener("click", () => {
   closeManagePages();
   const pages = pagesFromManifest().filter(isIncluded);

@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.5.0] - 2026-09-22
+
+### Added
+- "Export Site" button in the editor — runs `build` server-side and serves the frozen static site back at `/built/<device>/index.html`, no CLI needed
+- Label override field: replaces the button's captured on-image text with a fixed override, shown as an overlay on the button in both the editor and static site
+
 ## [0.4.0] - 2026-09-22
 
 ### Added
