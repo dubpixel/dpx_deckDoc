@@ -17,6 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getMeta } from "../meta.js";
+import { loadPageSelection, isIncluded } from "../pageSelection.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_DIR = path.join(__dirname, "..", "..", "site-template");
@@ -39,12 +40,14 @@ export async function buildSite({ outDir }) {
   } catch (err) {
     if (err.code !== "ENOENT") throw err;
   }
+  const pageSelection = await loadPageSelection(outDir);
 
   const siteDir = path.join(outDir, "site");
   await fs.mkdir(path.join(siteDir, "images"), { recursive: true });
 
   const pages = new Map();
   for (const entry of manifest) {
+    if (!isIncluded(pageSelection, entry.page)) continue;
     const destName = `${entry.page}-${entry.row}-${entry.col}${path.extname(entry.image)}`;
     await fs.copyFile(entry.image, path.join(siteDir, "images", destName));
     const key = `${entry.page}/${entry.row}/${entry.col}`;
@@ -124,7 +127,8 @@ export async function buildSite({ outDir }) {
     );
   }
 
-  return { pageCount: pages.size, buttonCount: manifest.length, siteDir };
+  const buttonCount = [...pages.values()].reduce((n, buttons) => n + buttons.length, 0);
+  return { pageCount: pages.size, buttonCount, siteDir };
 }
 
 function renderShell(bodyHtml, meta) {

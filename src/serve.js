@@ -28,7 +28,9 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadAnnotations, saveAnnotations, applyManualEdit, keyFor } from "./annotate/store.js";
+import { loadPageSelection, savePageSelection } from "./pageSelection.js";
 import { getMeta } from "./meta.js";
+import { scrapeDevice } from "./scrape.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EDITOR_DIR = path.join(__dirname, "..", "editor-template");
@@ -131,12 +133,61 @@ export async function serve({ outDir, port = 4321 }) {
       const slug = url.searchParams.get("device");
       const dir = devices[slug];
       if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${slug}"` }), MIME[".json"]);
-      const [manifest, annotations, pageTitles] = await Promise.all([
+      const [manifest, annotations, pageTitles, pageSelection] = await Promise.all([
         loadManifest(dir),
         loadAnnotations(dir),
         loadPageTitles(dir),
+        loadPageSelection(dir),
       ]);
-      return send(res, 200, JSON.stringify({ manifest, annotations, pageTitles }), MIME[".json"]);
+      return send(res, 200, JSON.stringify({ manifest, annotations, pageTitles, pageSelection }), MIME[".json"]);
+    }
+
+    if (url.pathname === "/api/page-selection" && req.method === "POST") {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return send(res, 400, JSON.stringify({ error: "invalid JSON" }), MIME[".json"]);
+      }
+      const devices = await resolveDevices(outDir);
+      const dir = devices[body.device];
+      if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${body.device}"` }), MIME[".json"]);
+      const selection = await loadPageSelection(dir);
+      // body.changes: { [page]: boolean }
+      for (const [page, included] of Object.entries(body.changes ?? {})) {
+        selection[page] = Boolean(included);
+      }
+      await savePageSelection(dir, selection);
+      return send(res, 200, JSON.stringify(selection), MIME[".json"]);
+    }
+
+    if (url.pathname === "/api/scrape" && req.method === "POST") {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return send(res, 400, JSON.stringify({ error: "invalid JSON" }), MIME[".json"]);
+      }
+      if (!body.host) return send(res, 400, JSON.stringify({ error: "host is required" }), MIME[".json"]);
+
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+      try {
+        const result = await scrapeDevice({
+          host: body.host,
+          port: body.port ? Number(body.port) : undefined,
+          device: body.device || undefined,
+          devicesRoot: outDir,
+          onProgress: (msg) => res.write(msg + "\n"),
+        });
+        res.write(`__DONE__ ${JSON.stringify(result)}\n`);
+      } catch (err) {
+        res.write(`__ERROR__ ${err.message}\n`);
+      }
+      return res.end();
     }
 
     if (url.pathname === "/api/annotation" && req.method === "POST") {

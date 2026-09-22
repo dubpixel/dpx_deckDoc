@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.4.0] - 2026-09-22
+
+### Added
+- "+ New Device" in the live editor — scrapes a Companion instance straight from the browser (host/port/device form, streamed progress), no CLI needed
+- "Manage Pages" — per-page include/exclude checkboxes; excluded pages are hidden from the editor nav and skipped by `build` (`<device>/page-selection.json`)
+- Page nav row no longer wraps into a multi-row block for large instances — stays one horizontally-scrollable row
+
+### Fixed
+- Both modals (`New Device`, `Manage Pages`) appeared stuck open on load — `.modal-overlay { display: flex }` was overriding the `hidden` attribute (equal CSS specificity, later stylesheet wins). Added an explicit `[hidden] { display: none !important; }` rule.
+
 ## [0.3.0] - 2026-09-22
 
 ### Added

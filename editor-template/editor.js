@@ -5,14 +5,21 @@ const deviceNavEl = document.getElementById("device-nav");
 const deckEl = document.getElementById("deck");
 const panelEl = document.getElementById("side-panel");
 const navEl = document.getElementById("page-nav");
+const manageBtn = document.getElementById("manage-pages-btn");
+const newDeviceBtn = document.getElementById("new-device-btn");
 
 let devices = [];
 let currentDevice = null;
 let manifest = [];
 let annotations = {};
 let pageTitles = {};
+let pageSelection = {};
 let currentPage = null;
 let selectedBtn = null; // {page,row,col} currently in edit mode, or null
+
+function isIncluded(page) {
+  return pageSelection[String(page)] !== false;
+}
 
 function imgUrl(page, row, col) {
   return `/images/${currentDevice}/${page}/${row}-${col}.png`;
@@ -29,6 +36,7 @@ async function loadDeviceData(slug) {
   manifest = data.manifest;
   annotations = data.annotations;
   pageTitles = data.pageTitles ?? {};
+  pageSelection = data.pageSelection ?? {};
 }
 
 function renderDeviceNav() {
@@ -46,8 +54,9 @@ async function selectDevice(slug) {
   currentDevice = slug;
   selectedBtn = null;
   await loadDeviceData(slug);
-  const pages = pagesFromManifest();
-  currentPage = pages[0] ?? null;
+  const pages = pagesFromManifest().filter(isIncluded);
+  currentPage = pages[0] ?? pagesFromManifest()[0] ?? null;
+  manageBtn.hidden = pagesFromManifest().length === 0;
   renderDeviceNav();
   renderNav();
   renderDeck();
@@ -60,7 +69,7 @@ function pagesFromManifest() {
 
 function renderNav() {
   navEl.innerHTML = "";
-  for (const p of pagesFromManifest()) {
+  for (const p of pagesFromManifest().filter(isIncluded)) {
     const entries = manifest.filter((e) => e.page === p);
     const rows = Math.max(...entries.map((e) => e.row)) + 1;
     const cols = Math.max(...entries.map((e) => e.col)) + 1;
@@ -226,6 +235,162 @@ function escapeHtml(str) {
 function escapeAttr(str) {
   return escapeHtml(str);
 }
+
+// ---- Manage Pages modal ----
+
+const managePagesModal = document.getElementById("manage-pages-modal");
+const pageListEl = document.getElementById("page-list");
+
+function openManagePages() {
+  renderPageList();
+  managePagesModal.hidden = false;
+}
+
+function closeManagePages() {
+  managePagesModal.hidden = true;
+}
+
+function renderPageList() {
+  pageListEl.innerHTML = "";
+  for (const p of pagesFromManifest()) {
+    const entries = manifest.filter((e) => e.page === p);
+    const included = isIncluded(p);
+
+    const row = document.createElement("label");
+    row.className = "page-list-row" + (included ? "" : " excluded");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = included;
+    checkbox.addEventListener("change", () => savePageSelectionChange(p, checkbox.checked));
+
+    const thumb = document.createElement("div");
+    thumb.className = "plr-thumb";
+    const rows = Math.max(...entries.map((e) => e.row)) + 1;
+    const cols = Math.max(...entries.map((e) => e.col)) + 1;
+    thumb.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    thumb.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    for (const e of entries) {
+      const img = document.createElement("img");
+      img.src = imgUrl(e.page, e.row, e.col);
+      img.style.gridRow = e.row + 1;
+      img.style.gridColumn = e.col + 1;
+      thumb.appendChild(img);
+    }
+
+    const label = document.createElement("span");
+    label.className = "plr-label";
+    label.textContent = pageTitles[p] ? `${p} — ${pageTitles[p]}` : `Page ${p}`;
+
+    row.appendChild(checkbox);
+    row.appendChild(thumb);
+    row.appendChild(label);
+    pageListEl.appendChild(row);
+  }
+}
+
+async function savePageSelectionChange(page, included) {
+  pageSelection[String(page)] = included;
+  await fetch("/api/page-selection", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ device: currentDevice, changes: { [page]: included } }),
+  });
+  renderPageList();
+}
+
+async function setAllPages(included) {
+  const changes = {};
+  for (const p of pagesFromManifest()) {
+    pageSelection[String(p)] = included;
+    changes[p] = included;
+  }
+  await fetch("/api/page-selection", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ device: currentDevice, changes }),
+  });
+  renderPageList();
+}
+
+document.getElementById("manage-pages-btn").addEventListener("click", openManagePages);
+document.getElementById("mp-done").addEventListener("click", () => {
+  closeManagePages();
+  const pages = pagesFromManifest().filter(isIncluded);
+  if (!pages.includes(currentPage)) currentPage = pages[0] ?? null;
+  renderNav();
+  renderDeck();
+  renderPanelEmpty();
+});
+document.getElementById("select-all-btn").addEventListener("click", () => setAllPages(true));
+document.getElementById("select-none-btn").addEventListener("click", () => setAllPages(false));
+managePagesModal.addEventListener("click", (e) => {
+  if (e.target === managePagesModal) closeManagePages();
+});
+
+// ---- New Device modal ----
+
+const newDeviceModal = document.getElementById("new-device-modal");
+const newDeviceForm = document.getElementById("new-device-form");
+const ndProgress = document.getElementById("nd-progress");
+
+function openNewDevice() {
+  newDeviceForm.hidden = false;
+  newDeviceForm.reset();
+  ndProgress.hidden = true;
+  ndProgress.textContent = "";
+  newDeviceModal.hidden = false;
+}
+
+function closeNewDevice() {
+  newDeviceModal.hidden = true;
+}
+
+newDeviceBtn.addEventListener("click", openNewDevice);
+document.getElementById("nd-cancel").addEventListener("click", closeNewDevice);
+newDeviceModal.addEventListener("click", (e) => {
+  if (e.target === newDeviceModal) closeNewDevice();
+});
+
+newDeviceForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const fd = new FormData(newDeviceForm);
+  const payload = {
+    host: fd.get("host"),
+    port: fd.get("port") || undefined,
+    device: fd.get("device") || undefined,
+  };
+
+  newDeviceForm.hidden = true;
+  ndProgress.hidden = false;
+  ndProgress.textContent = "Starting scrape...\n";
+
+  const res = await fetch("/api/scrape", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let doneResult = null;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    const text = decoder.decode(value);
+    ndProgress.textContent += text;
+    ndProgress.scrollTop = ndProgress.scrollHeight;
+    const doneMatch = text.match(/__DONE__ (.+)/);
+    if (doneMatch) doneResult = JSON.parse(doneMatch[1]);
+  }
+
+  if (doneResult) {
+    await loadDevices();
+    renderDeviceNav();
+    await selectDevice(doneResult.device);
+    closeNewDevice();
+  }
+});
 
 async function renderTopbar() {
   const res = await fetch("/api/meta");

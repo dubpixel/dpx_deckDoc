@@ -10,6 +10,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html { font-size: 17px; }
 
@@ -115,9 +116,11 @@ header h1 { font-size: 1.4rem; margin: 0; }
 #page-nav {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   overflow-x: auto;
-  padding-bottom: 4px;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  min-width: 0;
 }
 
 #page-nav button {
@@ -337,6 +340,189 @@ main {
   height: 9px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+.new-device-btn,
+.manage-pages-btn {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.new-device-btn:hover,
+.manage-pages-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal.modal-wide {
+  width: 640px;
+}
+
+.modal h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modal input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modal-actions .save {
+  background: var(--accent);
+  color: #0b0c11;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-actions .cancel {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.scrape-progress {
+  margin-top: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.manage-pages-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.manage-pages-actions button {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+#page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.page-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.page-list-row:hover {
+  background: var(--bg);
+}
+
+.page-list-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.page-list-row .plr-thumb {
+  display: grid;
+  gap: 1px;
+  width: 56px;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.page-list-row .plr-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.page-list-row .plr-label {
+  font-size: 0.9rem;
+}
+
+.page-list-row.excluded {
+  opacity: 0.45;
 }
 
 .deck .btn.selected {
