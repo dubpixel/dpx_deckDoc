@@ -72,8 +72,8 @@ function renderDeck() {
   }
   const rows = Math.max(...entries.map((e) => e.row)) + 1;
   const cols = Math.max(...entries.map((e) => e.col)) + 1;
-  deckEl.style.gridTemplateColumns = `repeat(${cols}, 64px)`;
-  deckEl.style.gridTemplateRows = `repeat(${rows}, 64px)`;
+  deckEl.style.gridTemplateColumns = `repeat(${cols}, 96px)`;
+  deckEl.style.gridTemplateRows = `repeat(${rows}, 96px)`;
   deckEl.innerHTML = "";
 
   for (const e of entries) {

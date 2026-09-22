@@ -117,7 +117,7 @@ export async function buildSite({ outDir }) {
             <p class="empty-hint">Hover a button to see its annotation.</p>
           </div>
           <div class="deck-wrap">
-            <div class="deck" id="deck" style="grid-template-columns:repeat(${cols},64px);grid-template-rows:repeat(${rows},64px)">${buttonsHtml}</div>
+            <div class="deck" id="deck" style="grid-template-columns:repeat(${cols},96px);grid-template-rows:repeat(${rows},96px)">${buttonsHtml}</div>
           </div>
         </div>
       `, meta)

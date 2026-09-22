@@ -11,6 +11,8 @@
 
 * { box-sizing: border-box; }
 
+html { font-size: 17px; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -21,38 +23,38 @@ body {
 .dpx-topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 24px;
-  font-size: 11px;
+  gap: 14px;
+  padding: 8px 32px;
+  font-size: 0.9rem;
   color: var(--muted);
   background: #0b0c11;
   border-bottom: 1px solid var(--border);
 }
-.dpx-topbar img { border-radius: 3px; }
+.dpx-topbar img { border-radius: 4px; width: 26px; height: 26px; }
 .dpx-topbar a { color: var(--muted); text-decoration: none; }
 .dpx-topbar a:hover { color: var(--accent); }
 .dpx-topbar .dpx-version { color: var(--accent); font-weight: 600; }
 .dpx-topbar .dpx-git { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 
-main { padding: 24px; }
+main { padding: 32px; }
 
-h1 { margin-top: 0; font-size: 18px; }
+h1 { margin-top: 0; font-size: 1.4rem; }
 a { color: var(--accent); }
 
 /* index page: page cards with real thumbnails */
 .page-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 22px;
+  margin-top: 22px;
 }
 
 .page-card {
   display: block;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
   text-decoration: none;
   color: var(--text);
 }
@@ -63,9 +65,9 @@ a { color: var(--accent); }
   display: grid;
   gap: 2px;
   aspect-ratio: 16 / 10;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .thumb-btn img {
@@ -76,45 +78,45 @@ a { color: var(--accent); }
 }
 
 .page-card-label {
-  font-size: 13px;
+  font-size: 1rem;
   color: var(--text);
 }
 
 /* page view: frame with side panel + centered deck */
 .frame {
   display: grid;
-  grid-template-columns: 280px auto;
-  gap: 32px;
+  grid-template-columns: 340px auto;
+  gap: 40px;
   align-items: start;
-  max-width: 1200px;
-  margin: 16px auto 0;
+  max-width: 1500px;
+  margin: 22px auto 0;
 }
 
 .side-panel {
   position: sticky;
-  top: 24px;
+  top: 32px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  min-height: 160px;
+  border-radius: 12px;
+  padding: 22px;
+  min-height: 200px;
 }
 
-.empty-hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
-.side-panel .loc { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
-.side-panel .heading { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
-.side-panel .body-text { font-size: 13px; line-height: 1.4; margin-bottom: 8px; white-space: pre-wrap; }
-.side-panel .notice { color: var(--notice); font-weight: 600; font-size: 13px; margin-bottom: 8px; }
-.side-panel .note { font-style: italic; color: var(--muted); font-size: 12px; }
+.empty-hint { color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+.side-panel .loc { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+.side-panel .heading { font-weight: 700; font-size: 1.2rem; margin-bottom: 8px; }
+.side-panel .body-text { font-size: 1rem; line-height: 1.45; margin-bottom: 10px; white-space: pre-wrap; }
+.side-panel .notice { color: var(--notice); font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
+.side-panel .note { font-style: italic; color: var(--muted); font-size: 0.9rem; }
 .side-panel .command {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
+  font-size: 0.85rem;
   color: var(--muted);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  margin-top: 8px;
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-top: 10px;
   white-space: pre-wrap;
 }
 
@@ -122,15 +124,15 @@ a { color: var(--accent); }
 
 .deck {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   width: fit-content;
 }
 
 .deck .btn {
   position: relative;
-  width: 64px;
-  height: 64px;
-  border-radius: 6px;
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--border);
   background: #000;
@@ -143,4 +145,4 @@ a { color: var(--accent); }
   display: block;
 }
 
-.deck .btn.has-notice { box-shadow: 0 0 0 2px var(--notice); }
+.deck .btn.has-notice { box-shadow: 0 0 0 3px var(--notice); }
