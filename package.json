@@ -1,6 +1,6 @@
 {
   "name": "dpx_deckdoc",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Auto-generated documentation for Bitfocus Companion control-surface setups",
   "type": "module",
   "bin": {
