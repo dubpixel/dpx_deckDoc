@@ -3,8 +3,13 @@
 node_modules/
 npm-debug.log*
 
-# Generated output (images, manifest, generated site)
+# Generated output (images, manifest, generated site) — any output* dir,
+# including ad-hoc test dirs like output_local/
 output/
+output*/
+
+# Editor workspace files (not shared team config)
+*.code-workspace
 
 # Local env / secrets
 .env

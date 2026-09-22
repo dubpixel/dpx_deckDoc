@@ -9,20 +9,36 @@
 //          annotation store without ever overwriting a hand-written entry.
 // Dependencies: none
 //
+// SCHEMA (revised 2026-09-22): an annotation is no longer a single opaque
+// text blob — it's structured into HEADING / BODY / NOTICE / NOTE / COMMAND
+// fields so the viewer can style them distinctly (heading bold, notice in
+// red, note in italics). `command` holds the raw technical prefill
+// (connection + action names straight from the `.companionconfig` export);
+// `body` is reserved for the human-written, "decyphered" explanation of
+// what the button actually does — prefill NEVER touches `body`, only
+// `command`. heading/notice/note are always left for the user to fill in
+// by hand too.
+//
 // ================================================================================
 
 import fs from "node:fs/promises";
 import path from "node:path";
 
-function keyFor(page, row, col) {
+export function keyFor(page, row, col) {
   return `${page}/${row}/${col}`;
 }
 
 /**
  * @typedef {object} Annotation
- * @property {string} text
+ * @property {string} heading
+ * @property {string} body - human-written, "decyphered" explanation; never auto-filled
+ * @property {string} notice
+ * @property {string} note
+ * @property {string} command - raw technical prefill (connection/action names)
  * @property {"prefilled"|"manual"} source
  */
+
+const BLANK = { heading: "", body: "", notice: "", note: "", command: "" };
 
 /**
  * Loads the annotation store from disk, or an empty object if it doesn't exist yet.
@@ -52,8 +68,8 @@ export async function saveAnnotations(outDir, annotations) {
 
 /**
  * Merges parsed config-export button metadata into the annotation store as
- * "prefilled" entries. Never overwrites an existing "manual" annotation —
- * hand-written notes always win.
+ * "prefilled" entries (`body` only). Never overwrites an existing "manual"
+ * annotation — hand-written notes always win, field by field.
  *
  * @param {Record<string, Annotation>} annotations - existing store, mutated in place
  * @param {import("../config/parseExport.js").ButtonMeta[]} buttonMetas
@@ -65,14 +81,33 @@ export function mergePrefill(annotations, buttonMetas) {
     const existing = annotations[key];
     if (existing && existing.source === "manual") continue;
 
-    const parts = [];
-    if (meta.connections.length) parts.push(`Connection: ${meta.connections.join(", ")}`);
-    if (meta.actionSummaries.length) parts.push(`Actions: ${meta.actionSummaries.join(", ")}`);
-
     annotations[key] = {
-      text: parts.join(" — ") || "(no actions found)",
+      ...BLANK,
+      command: meta.command,
       source: "prefilled",
     };
   }
   return annotations;
+}
+
+/**
+ * Applies a manual (hand-written) edit to one button's annotation. Always
+ * wins over prefill, and always marks the entry "manual" so future prefill
+ * merges leave it alone.
+ *
+ * @param {Record<string, Annotation>} annotations - mutated in place
+ * @param {{page:number, row:number, col:number, heading?:string, body?:string, notice?:string, note?:string, command?:string}} edit
+ */
+export function applyManualEdit(annotations, edit) {
+  const key = keyFor(edit.page, edit.row, edit.col);
+  const existing = annotations[key] ?? { ...BLANK };
+  annotations[key] = {
+    heading: edit.heading ?? existing.heading ?? "",
+    body: edit.body ?? existing.body ?? "",
+    notice: edit.notice ?? existing.notice ?? "",
+    note: edit.note ?? existing.note ?? "",
+    command: edit.command ?? existing.command ?? "",
+    source: "manual",
+  };
+  return annotations[key];
 }

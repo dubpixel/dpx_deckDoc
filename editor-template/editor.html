@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dpx_deckDoc editor</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <div class="dpx-topbar" id="dpx-topbar"></div>
+  <header>
+    <h1>dpx_deckDoc</h1>
+    <nav id="page-nav"></nav>
+  </header>
+
+  <main>
+    <div class="frame">
+      <div class="side-panel" id="side-panel">
+        <p class="empty-hint">Hover a button to preview its annotation.<br>Click a button to edit it.</p>
+      </div>
+      <div class="deck-wrap">
+        <div class="deck" id="deck"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>

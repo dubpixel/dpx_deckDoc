@@ -148,6 +148,10 @@ export async function captureSatellitePage({
           }
         } else if (command === "PONG") {
           // keepalive ack, nothing to do
+        } else if (command.endsWith("ERROR")) {
+          clearTimeout(timeout);
+          finish(new Error(`Companion rejected ${command}: ${params.MESSAGE ?? "(no message)"}`));
+          return;
         }
       }
     });

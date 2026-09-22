@@ -17,9 +17,10 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { captureSatellitePage } from "./capture/satellite.js";
 import { captureScreenshotPage } from "./capture/screenshot.js";
-import { parseCompanionExport } from "./config/parseExport.js";
+import { parseCompanionExport, parsePageTitles } from "./config/parseExport.js";
 import { loadAnnotations, saveAnnotations, mergePrefill } from "./annotate/store.js";
 import { buildSite } from "./site/build.js";
+import { serve } from "./serve.js";
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -83,11 +84,11 @@ async function cmdCapture(args) {
     const result = await captureScreenshotPage({
       url: args.url,
       outDir: imgDir,
-      gridSelector: args.selector,
       page,
     });
-    await appendManifest(outDir, [{ page, row: 0, col: 0, image: result.outPath }]);
-    console.log(`Captured page ${page} screenshot at ${result.outPath}`);
+    const entries = result.buttons.map((b) => ({ page, row: b.row, col: b.col, image: b.path }));
+    await appendManifest(outDir, entries);
+    console.log(`Captured ${entries.length} button images on page ${page} from the web UI`);
   } else {
     throw new Error("--mode must be 'satellite' or 'screenshot'");
   }
@@ -101,13 +102,25 @@ async function cmdAnnotate(args) {
   const annotations = await loadAnnotations(outDir);
   mergePrefill(annotations, buttonMetas);
   await saveAnnotations(outDir, annotations);
+
+  const pageTitles = await parsePageTitles(args.config);
+  await fs.mkdir(outDir, { recursive: true });
+  await fs.writeFile(path.join(outDir, "pages.json"), JSON.stringify(pageTitles, null, 2));
+
   console.log(`Merged prefill annotations for ${buttonMetas.length} buttons into ${outDir}/annotations.json`);
+  console.log(`Wrote ${Object.keys(pageTitles).length} page titles to ${outDir}/pages.json`);
 }
 
 async function cmdBuild(args) {
   const outDir = args.out ?? "output";
   const result = await buildSite({ outDir });
   console.log(`Built site: ${result.pageCount} page(s), ${result.buttonCount} button image(s) -> ${result.siteDir}/index.html`);
+}
+
+async function cmdServe(args) {
+  const outDir = args.out ?? "output";
+  const port = Number(args.port ?? 4321);
+  await serve({ outDir, port });
 }
 
 async function main() {
@@ -124,8 +137,11 @@ async function main() {
     case "build":
       await cmdBuild(args);
       break;
+    case "serve":
+      await cmdServe(args);
+      break;
     default:
-      console.error("Usage: node src/cli.js <capture|annotate|build> [--flags]");
+      console.error("Usage: node src/cli.js <capture|annotate|build|serve> [--flags]");
       process.exit(1);
   }
 }
