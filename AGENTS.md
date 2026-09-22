@@ -4,112 +4,85 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ---
 
-## PROJECT: [Project Name]
+## PROJECT: dpx_deckDoc
 
-**Instructions for customizing this section:**
-Replace the placeholders below with your project's specific information. Remove subsections that don't apply. This template is intentionally verbose — prune what you don't need.
-
-**Status:** [e.g., v0.1.0 complete (2026-06-05) ✅]  
-**Branch:** [e.g., `feature/core-app-implementation`]  
-**Version File:** [e.g., `VERSION` (currently 0.1.0)]
+**Status:** v0.1.0 scaffold in progress (2026-09-22)
+**Branch:** `feature/deckdoc-scaffold`
+**Version File:** `VERSION` (currently 0.1.0)
 
 ### Architecture (2-minute summary)
 
-[One-paragraph overview: what this project does, core tech, how it works]
-
-**Example:** "Browser-based monitoring tool for Phabrix QX waveform monitors. Pure vanilla JS (no frameworks, no build step, no CDN). Connects to QX REST API on port 8080, polls status/logs every 2-5s, stores settings in localStorage. Works offline in airgapped broadcast facilities."
+Auto-generated documentation tool for Bitfocus Companion control-surface setups. Captures every page of a Companion instance as button images, attaches an annotation to each button (what it does, what it triggers), and builds a static website to browse the annotated pages — so a rig can be handed off to someone who didn't build it without a live walkthrough. Node.js CLI, no build step; output is plain HTML/CSS/JS.
 
 | Component | Tech/Location | Purpose | Notes |
 |-----------|---------------|---------|-------|
-| [Component 1] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Component 2] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Component 3] | [Tech] / `path/` | [What it does] | [Key details] |
-| [Reference docs] | [Format] / `path/` | [What it is] | **Source of truth for [topic]** |
+| Satellite capture | Node (`net` sockets) / `src/capture/satellite.js` | Connect as a virtual Satellite device, stream real rendered button bitmaps over TCP | Never run against a host without an explicit `--host` flag from the user |
+| Screenshot capture | Playwright / `src/capture/screenshot.js` | Screenshot the Companion web UI page-by-page | Non-invasive alternative; doesn't touch Companion's control state |
+| Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` JSON export into per-button connection/action metadata | Used to pre-fill annotations |
+| Annotation store | Node / `src/annotate/store.js` | Reads/writes `output/annotations.json`; merges config-derived prefill without clobbering hand edits | |
+| Site generator | Node / `src/site/build.js` | Builds the static viewer site from images + annotations | No bundler; `<script type="module">` files referenced directly |
+| Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
 
 ### Agent Rules (for this repo)
 
 **Before ANY code change:**
-1. Work from `[main/master]` branch; create feature branch: `feature/brief-description`
+1. Work from `main`; create feature branch: `feature/brief-description`
 2. Bump VERSION file per semantic versioning (AGENTS.md §1)
 3. Create git commit for version bump, tag it: `git tag vX.Y.Z`
 
 **While coding:**
-- [Project-specific rule or constraint]
-- [Technology requirement or restriction]
-- [Testing/validation requirement]
+- No build step anywhere: the CLI runs directly with `node`, no TS compile/bundle step; the generated viewer site is hand-authored HTML/CSS/JS, opened or served as-is
+- Capture backends stay pluggable and interchangeable — both write to the same `output/images/` + `manifest.json` layout so `annotate`/`build` don't care which one ran
+- Never run the Satellite API capture against a Companion host without an explicit, user-supplied `--host` — no default/guessed target, no auto-discovery
 - Keep changes small, test before committing
 - File header per AGENTS.md §3
 
 **When done:**
 - Update CHANGELOG.md with feature list
 - Create PR per AGENTS.md §1 template
-- [Any project-specific verification steps]
+- Run the relevant CLI command(s) end-to-end against real output before calling a step done
 
 ### Critical Constraints
 
 **MUST HAVE:**
-- ✅ [Required capability or dependency]
-- ✅ [Required technology or approach]
-- ✅ [Required compatibility or standard]
+- ✅ Two working capture backends (Satellite API + screenshot), interchangeable via CLI flag
+- ✅ Annotation prefill from `.companionconfig` export that never overwrites a hand-edited entry
+- ✅ Generated site works by opening `index.html` directly — no server or build step required to view it
 
 **DO NOT:**
-- ❌ [Forbidden action or technology]
-- ❌ [Assumption that must be avoided]
-- ❌ [Hard-coded value or static configuration]
-- ❌ [Change that requires explicit verification]
+- ❌ Auto-connect to any Companion instance without an explicit `--host`/URL from the user
+- ❌ Add a frontend framework or bundler to the viewer site — plain HTML/CSS/JS only
+- ❌ Overwrite a hand-written annotation with a config-export prefill
 
 ### Key Decisions
 
-- **[Decision Title]:** [Explanation - why this approach was chosen over alternatives]
-- **[Decision Title]:** [Rationale for architecture/design choice]
-- **[Decision Title]:** [Context for future agents]
-
-**Examples:**
-- **Dual README templates:** Hardware needs schematics/BOMs, software needs API docs - fundamentally different documentation needs
-- **No WebSocket:** QX REST API is HTTP-only. Polling is the only option.
-- **Bootstrap on connect:** Device specs vary by boot mode - auto-detect on initial connection
+- **Two capture backends, not one with a fallback:** Satellite API is the "correct" way to get clean button bitmaps, but it means connecting as a device to a potentially live production Companion instance — the user wanted a less-invasive screenshot option available from day one, not bolted on later.
+- **Pre-fill annotations from config export:** Companion's `.companionconfig` export already has connection/action names per button; hand-writing every annotation from scratch is unnecessary busywork.
+- **No build step, vanilla output:** Matches dpx broadcast-tooling philosophy (see Development Philosophy below) — minimal, auditable, works offline, nothing to compile before viewing the generated docs on-site.
 
 ### Gotchas & Landmines
 
-1. **[Issue Title]:** [Description]. [Workaround or solution]. [Where to look for more info]
-2. **[Issue Title]:** [Description]. [Workaround or solution].
-3. **[Issue Title]:** [Description]. [Always check/verify X before doing Y].
-
-**Examples:**
-- **CORS issue:** API calls from `file://` origin fail. Use launch script or Python server, not direct open.
-- **Boot modes matter:** Device can boot in different modes. Different endpoints available per mode. Always auto-detect on connect.
-- **Manual is authority:** If specs seem odd, check `/docs/manual.pdf` Ch.X. Don't guess.
+1. **Satellite API is stateful/live:** It connects as a real device to Companion (`ADD-DEVICE`/`ADD-SUB`). Test against the known dev instance (see below) before ever pointing it at a production rig, and always require an explicit `--host`.
+2. **HTTP REST API can't read config:** Companion's plain HTTP remote-control API (`/api/location/...`) can trigger/style buttons but cannot read button config or export images — that's why capture uses the Satellite API or screenshots instead.
+3. **Config prefill must be non-destructive:** `store.js` must check for an existing hand-written annotation before writing a prefill — always merge, never blind-overwrite `output/annotations.json`.
 
 ### Common Operations
 
-**[Operation 1 - e.g., Create new project]:** `./script.sh` (interactive prompts for X/Y/Z)
+**Capture a Companion instance:** `node src/cli.js capture --mode satellite|screenshot --host <ip> --out output/`
 
-**[Operation 2 - e.g., Modify behavior]:** Edit `path/to/file.ext` - all logic centralized
+**Pre-fill annotations from a config export:** `node src/cli.js annotate --config path/to/export.companionconfig`
 
-**[Operation 3 - e.g., Add components]:** Add to `path/`, update `config.ext` if special handling needed
+**Build the viewer site:** `node src/cli.js build` → outputs `output/site/index.html`
 
-**[Operation 4 - e.g., Template processing]:**
-- [Scenario A]: `input-A.ext` → `output.ext`
-- [Scenario B]: `input-B.ext` → `output.ext`  
-- [Always]: `.git` and `.env` excluded from copy
+**Known test instance:** A working Companion instance is available at `10.196.11.26` for development/testing of both capture backends. Treat it as the dev target unless told otherwise — do not assume it's safe to run destructive/state-changing commands against it beyond capture.
 
 ### Reference
 
-See `/CONTEXT.md` for:
-- [Extended architecture details]
-- [Module/component specifications]
-- [Data schemas or API contracts]
-
-See `/.github/CONTEXT.md` for:
-- [API endpoint reference]
-- [Configuration specifications]
-- [Testing procedures]
+See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-mode ideas (tooltips vs. margin notes), and open TODOs.
 
 ### Development Philosophy
 
-[Optional: High-level principles for this project type]
-
-**Example:** "This is broadcast infrastructure tooling - reliability and simplicity trump features. Prefer vanilla JavaScript over frameworks. Keep dependencies minimal and auditable. Test in airgapped environments. Design for 24/7 unattended operation."
+This is broadcast infrastructure documentation tooling — reliability and simplicity trump features. Prefer vanilla JavaScript over frameworks for the generated site. Keep dependencies minimal and auditable (Playwright is the one exception, for screenshot capture). Never assume it's safe to write to a live Companion instance's control state — capture-only, read-only interactions with the target system.
 
 ---
 ## 0. Mid-Session Issue Triage (MANDATORY)
