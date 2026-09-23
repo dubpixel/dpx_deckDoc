@@ -82,6 +82,9 @@ export async function scrapeDevice({ host, port = 8000, device, devicesRoot = "d
   await saveAnnotations(outDir, annotations);
   await fs.writeFile(path.join(outDir, "pages.json"), JSON.stringify(pageTitles, null, 2));
 
+  const deviceMeta = { host, port, scrapedAt: new Date().toISOString() };
+  await fs.writeFile(path.join(outDir, "device.json"), JSON.stringify(deviceMeta, null, 2));
+
   onProgress(`Done: device "${deviceSlug}" — ${pageNumbers.length} pages, ${totalButtons} buttons -> ${outDir}`);
-  return { device: deviceSlug, outDir, pageCount: pageNumbers.length, buttonCount: totalButtons };
+  return { device: deviceSlug, outDir, pageCount: pageNumbers.length, buttonCount: totalButtons, ...deviceMeta };
 }

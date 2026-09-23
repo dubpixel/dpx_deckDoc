@@ -62,6 +62,15 @@ async function loadPageTitles(dir) {
   }
 }
 
+async function loadDeviceMeta(dir) {
+  try {
+    return JSON.parse(await fs.readFile(path.join(dir, "device.json"), "utf8"));
+  } catch (err) {
+    if (err.code === "ENOENT") return {};
+    throw err;
+  }
+}
+
 /**
  * Resolves the set of devices under a root: { slug -> absolute dir path }.
  */
@@ -121,12 +130,21 @@ export async function serve({ outDir, port = 4321 }) {
       const devices = await resolveDevices(outDir);
       const summaries = await Promise.all(
         Object.entries(devices).map(async ([slug, dir]) => {
-          const manifest = await loadManifest(dir);
+          const [manifest, deviceMeta] = await Promise.all([loadManifest(dir), loadDeviceMeta(dir)]);
           const pageCount = new Set(manifest.map((e) => e.page)).size;
-          return { slug, pageCount, buttonCount: manifest.length };
+          return { slug, pageCount, buttonCount: manifest.length, ...deviceMeta };
         })
       );
       return send(res, 200, JSON.stringify(summaries), MIME[".json"]);
+    }
+
+    if (url.pathname.startsWith("/api/devices/") && req.method === "DELETE") {
+      const slug = decodeURIComponent(url.pathname.slice("/api/devices/".length));
+      const devices = await resolveDevices(outDir);
+      const dir = devices[slug];
+      if (!dir) return send(res, 404, JSON.stringify({ error: `unknown device "${slug}"` }), MIME[".json"]);
+      await fs.rm(dir, { recursive: true, force: true });
+      return send(res, 200, JSON.stringify({ deleted: slug }), MIME[".json"]);
     }
 
     if (url.pathname === "/api/data" && req.method === "GET") {

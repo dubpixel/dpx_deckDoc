@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.7.0] - 2026-09-23
+
+### Added
+- `device.json` per device (host, port, scrapedAt) written by `scrape` — the device switcher now shows the real host:port and last-scraped time instead of just the slug name
+- Delete a device from the live editor — "×" on each device card, confirmed via `window.confirm()`, backed by `DELETE /api/devices/:slug`
+- Project directories renamed from `dpx_companionCompanion` to `dpx_deckDoc` to match the actual product name used everywhere else
+
 ## [0.6.0] - 2026-09-22
 
 ### Added

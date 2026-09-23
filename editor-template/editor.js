@@ -44,11 +44,64 @@ async function loadDeviceData(slug) {
 function renderDeviceNav() {
   deviceNavEl.innerHTML = "";
   for (const d of devices) {
+    const card = document.createElement("div");
+    card.className = "device-card" + (d.slug === currentDevice ? " active" : "");
+
+    const hostLine = d.host ? `${d.host}${d.port ? `:${d.port}` : ""}` : "no host recorded";
+    const scrapedLine = d.scrapedAt ? new Date(d.scrapedAt).toLocaleString() : "";
+
     const btn = document.createElement("button");
-    btn.className = d.slug === currentDevice ? "active" : "";
-    btn.innerHTML = `<span class="device-name">${d.slug}</span><span class="device-meta">${d.pageCount} pages · ${d.buttonCount} buttons</span>`;
+    btn.className = "device-card-main";
+    btn.innerHTML = `
+      <span class="device-name">${escapeHtml(d.slug)}</span>
+      <span class="device-host">${escapeHtml(hostLine)}</span>
+      <span class="device-meta">${d.pageCount} pages · ${d.buttonCount} buttons${scrapedLine ? ` · scraped ${escapeHtml(scrapedLine)}` : ""}</span>
+    `;
     btn.addEventListener("click", () => selectDevice(d.slug));
-    deviceNavEl.appendChild(btn);
+
+    const del = document.createElement("button");
+    del.className = "device-delete";
+    del.title = `Remove device "${d.slug}"`;
+    del.textContent = "×";
+    del.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      deleteDevice(d.slug);
+    });
+
+    card.appendChild(btn);
+    card.appendChild(del);
+    deviceNavEl.appendChild(card);
+  }
+}
+
+async function deleteDevice(slug) {
+  const confirmed = window.confirm(
+    `Remove device "${slug}"? This deletes all its captured images, annotations, and page selection. This cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  await fetch(`/api/devices/${encodeURIComponent(slug)}`, { method: "DELETE" });
+  await loadDevices();
+
+  if (currentDevice === slug) {
+    currentDevice = null;
+    if (devices.length) {
+      await selectDevice(devices[0].slug);
+    } else {
+      manifest = [];
+      annotations = {};
+      pageTitles = {};
+      pageSelection = {};
+      currentPage = null;
+      manageBtn.hidden = true;
+      exportBtn.hidden = true;
+      renderDeviceNav();
+      renderNav();
+      renderDeck();
+      renderPanelEmpty();
+    }
+  } else {
+    renderDeviceNav();
   }
 }
 

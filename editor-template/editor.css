@@ -68,35 +68,64 @@ body {
   border-radius: 4px;
 }
 
-#device-nav button {
+.device-card {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.device-card.active {
+  border-color: var(--accent);
+}
+
+.device-card-main {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   background: var(--bg);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: none;
   padding: 8px 14px;
   cursor: pointer;
 }
 
-#device-nav button.active {
-  border-color: var(--accent);
-}
-
-#device-nav .device-name {
+.device-name {
   font-weight: 600;
   font-size: 1rem;
 }
 
-#device-nav button.active .device-name {
+.device-card.active .device-name {
   color: var(--accent);
 }
 
-#device-nav .device-meta {
+.device-host {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.device-meta {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.device-delete {
+  background: var(--bg);
+  color: var(--muted);
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 0 12px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.device-delete:hover {
+  background: var(--notice);
+  color: #fff;
 }
 
 header {
