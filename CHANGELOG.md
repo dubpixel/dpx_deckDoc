@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.8.0] - 2026-09-23
+
+### Added
+- Public GitHub Pages manual (`index.md`) — beginner-friendly quickstart, plain-language CLI reference, annotation field reference, links to the demo ([#6](https://github.com/dubpixel/dpx_deckDoc/issues/6))
+- Public demo site with fabricated dummy data (`scripts/generate-demo-site.js` → `demo-src/device/` → `/demo/`) — no real Companion instance or show data involved; runs through the real `buildSite()` pipeline, published as a static read-only site ([#7](https://github.com/dubpixel/dpx_deckDoc/issues/7), option 1 of that ticket's three design options)
+- README links to the manual and demo in the header nav row
+
+### Note
+- Filed [#9](https://github.com/dubpixel/dpx_deckDoc/issues/9) for improving first-run CLI ergonomics/install experience, per direct feedback that the docs are hard for a beginner to parse — scoped, not built, this pass
+
 ## [0.7.1] - 2026-09-23
 
 ### Changed

@@ -6,7 +6,7 @@
 <!-- PROJECT SHIELDS -->
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.7.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.8.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square)
 ![Status](https://img.shields.io/badge/status-functional-brightgreen?style=flat-square)
 
@@ -22,7 +22,9 @@
     Capture every button, annotate it, ship it as a browsable, editable site — show-control documentation without the live walkthrough.
     <br />
      »  
-     <a href="https://github.com/dubpixel/dpx_deckDoc"><strong>Project Here!</strong></a>
+     <a href="https://dubpixel.github.io/dpx_deckDoc/"><strong>Read the Manual</strong></a>
+     »  
+     <a href="https://dubpixel.github.io/dpx_deckDoc/demo/"><strong>Try the Demo</strong></a>
      »  
      <br />
     <a href="https://github.com/dubpixel/dpx_deckDoc/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
@@ -146,8 +148,8 @@ Node's built-in test runner (`node --test`, zero extra dependencies) — covers 
 - [x] One-shot `scrape` command — discovers and captures an entire instance in one pass, verified against a real 99-page rig
 - [x] Multi-device support — device → pages → buttons tree, device switcher in the live editor
 - [x] Device host metadata + delete-a-device in the live editor
-- [ ] GitHub Pages manual (repo website) — [issue #6](https://github.com/dubpixel/dpx_deckDoc/issues/6)
-- [ ] Interactive demo site with dummy data — [issue #7](https://github.com/dubpixel/dpx_deckDoc/issues/7)
+- [x] GitHub Pages manual (repo website) — [issue #6](https://github.com/dubpixel/dpx_deckDoc/issues/6)
+- [x] Demo site with dummy data on GitHub Pages (static/read-only) — [issue #7](https://github.com/dubpixel/dpx_deckDoc/issues/7)
 
 See the [open issues](https://github.com/dubpixel/dpx_deckDoc/issues) for a full list of proposed features (and known issues).
 

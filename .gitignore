@@ -11,6 +11,9 @@ output*/
 # Captured device data (scrape output — real button images/config, not source)
 devices/
 
+# Demo generator's intermediate build output — the committed copy lives at /demo/
+demo-src/device/site/
+
 # Editor workspace files (not shared team config)
 *.code-workspace
 
