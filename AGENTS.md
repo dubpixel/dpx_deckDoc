@@ -6,9 +6,10 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.6.0, merged to `main`; functional end-to-end against real Companion instances (2026-09-23)
-**Branch:** `feature/device-management` (device host metadata + delete)
-**Version File:** `VERSION` (currently 0.6.0)
+**Status:** v0.7.1, repo now public; functional end-to-end against real Companion instances (2026-09-23)
+**Branch:** `docs/public-repo-and-site-tickets`
+**Version File:** `VERSION` (currently 0.7.1)
+**Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 
 ### Architecture (2-minute summary)
 
@@ -98,6 +99,10 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 ### Reference
 
 See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-mode ideas (tooltips vs. margin notes), and open TODOs.
+
+**Open, scoped-but-not-built tickets** (repo went public 2026-09-23, these are next):
+- [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6): the repo's public website root, a real user manual, links out to the demo
+- [#7 — Interactive demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7): dummy-data demo on GitHub Pages; ticket lays out three interactivity options (static frozen build / client-side-only fake editing via localStorage / real hosted `serve`) with a recommendation to start static and upgrade to localStorage-backed editing if worth it — real hosted `serve` is out of scope for GitHub Pages (static-only)
 
 ### Development Philosophy
 

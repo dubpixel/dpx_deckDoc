@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.7.1] - 2026-09-23
+
+### Changed
+- Repository made public: https://github.com/dubpixel/dpx_deckDoc (checked for committed secrets first — none found)
+
+### Added
+- Scoped tickets for the two remaining pre-launch pieces: [#6](https://github.com/dubpixel/dpx_deckDoc/issues/6) GitHub Pages manual (repo website), [#7](https://github.com/dubpixel/dpx_deckDoc/issues/7) interactive dummy-data demo site — neither built yet, both scoped with explicit design options
+
 ## [0.7.0] - 2026-09-23
 
 ### Added
