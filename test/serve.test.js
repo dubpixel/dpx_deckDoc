@@ -40,6 +40,10 @@ before(async () => {
     JSON.stringify([{ page: 1, row: 0, col: 0, image: path.join(imgDir, "0-0.png") }])
   );
   await fs.writeFile(path.join(deviceDir, "pages.json"), JSON.stringify({ 1: "Test Page" }));
+  await fs.writeFile(
+    path.join(deviceDir, "device.json"),
+    JSON.stringify({ host: "10.0.0.5", port: 8000, scrapedAt: "2026-09-22T00:00:00.000Z" })
+  );
 
   server = await serve({ outDir: devicesRoot, port: 0 });
   baseUrl = `http://localhost:${server.address().port}`;
@@ -51,7 +55,7 @@ after(async () => {
 });
 
 describe("GET /api/devices", () => {
-  test("lists the fixture device with correct counts", async () => {
+  test("lists the fixture device with correct counts and its host metadata", async () => {
     const res = await fetch(`${baseUrl}/api/devices`);
     assert.equal(res.status, 200);
     const devices = await res.json();
@@ -59,6 +63,36 @@ describe("GET /api/devices", () => {
     assert.equal(devices[0].slug, "test-device");
     assert.equal(devices[0].pageCount, 1);
     assert.equal(devices[0].buttonCount, 1);
+    assert.equal(devices[0].host, "10.0.0.5", "device.json's host must surface in the device list");
+    assert.equal(devices[0].port, 8000);
+  });
+});
+
+describe("DELETE /api/devices/:slug", () => {
+  test("removes a device's directory entirely", async () => {
+    const throwawayDir = path.join(devicesRoot, "throwaway-device");
+    await fs.mkdir(throwawayDir, { recursive: true });
+    await fs.writeFile(path.join(throwawayDir, "manifest.json"), "[]");
+
+    let listRes = await fetch(`${baseUrl}/api/devices`);
+    assert.equal((await listRes.json()).length, 2, "throwaway device should be visible before delete");
+
+    const delRes = await fetch(`${baseUrl}/api/devices/throwaway-device`, { method: "DELETE" });
+    assert.equal(delRes.status, 200);
+    const body = await delRes.json();
+    assert.equal(body.deleted, "throwaway-device");
+
+    listRes = await fetch(`${baseUrl}/api/devices`);
+    const remaining = await listRes.json();
+    assert.equal(remaining.length, 1, "throwaway device must be gone after delete");
+    assert.equal(remaining[0].slug, "test-device", "unrelated device must survive");
+
+    await assert.rejects(fs.access(throwawayDir), "directory itself must be removed from disk");
+  });
+
+  test("404s deleting an unknown device", async () => {
+    const res = await fetch(`${baseUrl}/api/devices/nonexistent`, { method: "DELETE" });
+    assert.equal(res.status, 404);
   });
 });
 

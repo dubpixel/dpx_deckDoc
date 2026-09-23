@@ -6,7 +6,7 @@
 <!-- PROJECT SHIELDS -->
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.7.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square)
 ![Status](https://img.shields.io/badge/status-functional-brightgreen?style=flat-square)
 

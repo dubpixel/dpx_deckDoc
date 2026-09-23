@@ -6,9 +6,9 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.2.0, functional end-to-end against a real 99-page Companion instance (2026-09-22)
-**Branch:** `feature/deckdoc-scaffold`
-**Version File:** `VERSION` (currently 0.2.0)
+**Status:** v0.6.0, merged to `main`; functional end-to-end against real Companion instances (2026-09-23)
+**Branch:** `feature/device-management` (device host metadata + delete)
+**Version File:** `VERSION` (currently 0.6.0)
 
 ### Architecture (2-minute summary)
 
@@ -20,7 +20,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper |
 | Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
 | Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
-| Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher, page nav with thumbnails, click-to-edit side panel, "+ New Device" scrapes from the browser (no CLI needed), "Manage Pages" include/exclude checkboxes | `node src/cli.js serve --out devices` |
+| Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher (shows real host:port + last-scraped time, "×" to delete a device), page nav with thumbnails, click-to-edit side panel, "+ New Device" scrapes from the browser (no CLI needed), "Manage Pages" include/exclude checkboxes | `node src/cli.js serve --out devices` |
 | Page selection | Node / `src/pageSelection.js` | Per-page include/exclude flags (`<device>/page-selection.json`) — excluded pages are hidden from the editor nav and skipped by `build` | Included by default; only explicit `false` excludes |
 | Export from browser | `src/serve.js` `/api/build` + `/built/<device>/...` | Runs `buildSite()` server-side and serves the result back so the frozen static site can be opened without touching the CLI | "Export Site" button in the editor header |
 | Label override | `annotations[key].labelOverride` | Replaces the captured on-image text with a fixed override, rendered as an overlay on the button in both the editor and static site | Never auto-filled; purely a manual annotation field |
