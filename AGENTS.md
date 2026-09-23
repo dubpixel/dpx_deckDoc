@@ -6,11 +6,13 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.9.1, capture now supports both modern and classic (pre-4.x) Companion UIs (2026-09-23)
-**Branch:** `feature/classic-companion-capture`
+**Status:** v0.9.1 on `main`; two real devices scraped and backed up (2026-09-23)
+**Branch:** `main`
 **Version File:** `VERSION` (currently 0.9.1)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 **Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
+
+**Priority direction (confirmed 2026-09-23):** the user wants a fully GUI-driven experience and does not care about CLI ergonomics — "i dont really care about CLI ill never run it that way. needs to be all gui." Once `serve` is running, the editor is already 100% GUI-driven (scrape/delete/annotate/export all happen in-browser); the one remaining terminal step is starting `serve` itself. Future work should prioritize closing that gap (see [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15)) over further CLI polish. [#9](https://github.com/dubpixel/dpx_deckDoc/issues/9)'s CLI-ergonomics work (PR #12, `init`/`--help`/`demo` commands) is built and tested but now secondary — still open, not merged, not the priority path.
 
 ### Architecture (2-minute summary)
 
@@ -102,16 +104,20 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 **Regenerate the public demo site:** `node scripts/generate-demo-site.js` — rebuilds `demo-src/device/` (fake data) and `/demo/` (frozen static output) from scratch; run after any `site-template/` change so the published demo stays current.
 
+**Real-device backups for building a better demo (#14):** `backups/` at the project root (gitignored, never committed — real show data) holds full snapshots of two real devices, pulled 2026-09-23 before either rig gets reprogrammed: `backups/8H_LOCAL_v3.5.1--10.196.191.1--2026-09-23/` (91 pages, 2823 buttons) and `backups/8H_FRANK_v3.0.0--10.196.11.21--2026-09-23/` (99 pages, 3168 buttons). Each has the full manifest, captured button images, page titles, and the raw `.companionconfig` export — use these as the real-shape source when building #14's content-rebuilt demo generator.
+
 **Known test instances:** `10.196.11.26` (Companion 4.2.5) and `127.0.0.1:8000` (Companion 4.3.4, same show config, local dev machine) are available for development/testing. Treat both as real dev targets unless told otherwise — do not assume it's safe to run destructive/state-changing commands against either beyond capture.
 
 ### Reference
 
 See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-mode ideas (tooltips vs. margin notes), and open TODOs.
 
-**Closed:** [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6) and [#7 — demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7), built together in v0.8.0. #7 shipped as option 1 from its own ticket (static frozen `build` output, dummy data, zero real Companion data) — option 2 (localStorage-backed fake editing) and option 3 (real hosted `serve`) remain possible future upgrades, not started.
+**Closed:** [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6) and [#7 — demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7), built together in v0.8.0. #7 shipped as option 1 from its own ticket (static frozen `build` output, dummy data, zero real Companion data). PR #13 (no separate ticket — found and fixed same-session) added classic pre-4.x Companion UI capture support after Frank's station silently captured zero buttons; merged in v0.9.1.
 
-**Open, scoped-but-not-built tickets:**
-- [#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9): beginner feedback that install + CLI flags are hard to parse; ideas include a guided `init` command, per-subcommand `--help`, possible npm publish — not scoped to a specific approach yet
+**Open tickets, roughly in priority order (as of 2026-09-23):**
+- [#15 — Fully GUI-driven experience, no terminal ever](https://github.com/dubpixel/dpx_deckDoc/issues/15): **current top priority.** Starting `serve` is the last remaining terminal step; ideas range from a double-clickable launcher to a proper packaged app
+- [#14 — Rebuild the demo from real device shape + editable with a content-safety story](https://github.com/dubpixel/dpx_deckDoc/issues/14): confirmed wanted (not just scoped) — real device shape/scale for content, fictional "SNL-style" labels, and it needs to actually become editable (option 2 from the old #7 design options), with a reset/safety story since it'll be public. Source material for the content rebuild is staged locally (see Common Operations below)
+- [#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9) / PR #12: built and tested (guided `init`, per-subcommand `--help`, a `demo` command), but **deprioritized** — the user doesn't use the CLI and wants #15 instead. PR left open, not merged; may still be useful as building blocks under a future GUI launcher
 
 ### Development Philosophy
 

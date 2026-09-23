@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
--
+- `backups/` (gitignored, local-only) — full snapshots of two real devices pulled before reprogramming, staged as source material for issue #14's demo rebuild
+
+### Note
+- Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
+- Issue #14 updated: the editable demo is now a confirmed want, not just a scoped maybe.
 
 ## [0.9.1] - 2026-09-23
 
