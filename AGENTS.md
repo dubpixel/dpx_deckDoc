@@ -6,9 +6,9 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.8.0, public GitHub Pages manual + dummy-data demo live (2026-09-23)
-**Branch:** `feature/pages-manual-and-demo`
-**Version File:** `VERSION` (currently 0.8.0)
+**Status:** v0.9.1, capture now supports both modern and classic (pre-4.x) Companion UIs (2026-09-23)
+**Branch:** `feature/classic-companion-capture`
+**Version File:** `VERSION` (currently 0.9.1)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 **Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
 
@@ -19,7 +19,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Component | Tech/Location | Purpose | Notes |
 |-----------|---------------|---------|-------|
 | One-shot scrape | Node / `src/scrape.js` | Pulls the config export, discovers all pages, captures every button, merges prefill — the primary entry point | `node src/cli.js scrape --host <ip> [--device <name>]` |
-| Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper |
+| Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper. Auto-detects and supports TWO Companion UI generations: "modern" (4.x's virtualized `.button-control` scroller) and "classic" (pre-4.x's flat `.bank img` grid, no scrolling needed) — see Gotcha #12 |
 | Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
 | Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
 | Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher (shows real host:port + last-scraped time, "×" to delete a device), page nav with thumbnails, click-to-edit side panel, "+ New Device" scrapes from the browser (no CLI needed), "Manage Pages" include/exclude checkboxes | `node src/cli.js serve --out devices` |
@@ -86,6 +86,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 9. **The `[hidden]` attribute needs an explicit CSS override if the element also has a class-based `display` rule.** A modal styled `.modal-overlay { display: flex; ... }` stays visible even with `hidden` set on the element — the class selector and the browser's built-in `[hidden] { display: none }` UA rule have equal specificity, and the later-loaded stylesheet (yours) wins. Fix: `[hidden] { display: none !important; }` near the top of `editor.css`. Cost real time — both modals appeared stuck open on first load until this was added.
 10. **The live editor used to hardcode `.png`/`image/png` for button images (`editor.js`'s `imgUrl()` and `serve.js`'s `/images/:device/...` route).** Never noticed before because real `scrape` captures are always PNG — the demo's SVG placeholders exposed it as broken images in the editor. Both now derive the real extension/content-type from the file itself. If a future capture backend writes a non-PNG format, this is already handled.
 11. **Before screenshotting `serve` for public docs, confirm nothing else is already bound to port 4321.** A stale background `serve` process from an earlier task can still be listening, and a fresh `serve --out <dir>` call that fails to bind (port in use) leaves you silently screenshotting whatever the *old* process is serving — which may be a real captured device, not the fixture you intended. Check `lsof -i :4321` and kill anything already there first; verify `curl localhost:4321/api/devices` shows only the expected device(s) before capturing.
+12. **Pre-4.x Companion instances use a completely different tablet UI DOM than the one the capture code was originally confirmed against — a scrape against one used to silently capture zero buttons on every page, no error at all.** Confirmed 2026-09-23 against a real Companion 3.0.0 instance: no `.button-control`/virtualized scroller; instead a flat `.bank img` grid, ALL buttons rendered into the DOM at once (no scrolling needed), `alt="Button N"` where N resets to 1 at each page boundary (not a global index), and the bitmap is the `<img>`'s own `src` — often `image/bmp`, not PNG. `src/capture/screenshot.js` now detects which UI generation is loaded (`detectUiKind()`: "modern" vs "classic" vs "unknown") and branches to the right extraction strategy; an "unknown" DOM now throws a clear error instead of silently returning zero buttons. Classic-grid geometry (column count) is *measured* from real bounding-box rows, not hardcoded to the historical 32-button/8-column default, so it isn't assumed to generalize to every old config. Images are now written with their real extension (`extForDataUrl()`) instead of a hardcoded `.png` — the live editor's `/images/` route and `imgUrl()` both had to become extension-aware too (see Gotcha #10).
 
 ### Common Operations
 
