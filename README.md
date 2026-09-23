@@ -76,6 +76,14 @@ Use cases: Stream Deck / Companion button-map documentation, show-control runboo
 
 See the full concept doc on Notion (`dpx_labs / dpx_deckDoc`) for background and open TODOs.
 
+<br>
+
+| Live editor — click a button to write it up | Static handoff site — hover for the annotation |
+|---|---|
+| ![Live editor annotate view](images/screenshots/editor-annotate.png) | ![Static handoff site page](images/screenshots/demo-page.png) |
+
+*(screenshots above are from the [dummy-data demo](https://dubpixel.github.io/dpx_deckDoc/demo/) — no real Companion instance or show data)*
+
 </br>
 
 *author(s): // www.dubpixel.tv  - i@dubpixel.tv | other authors* 

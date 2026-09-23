@@ -26,6 +26,12 @@ screenshotting anything.
 
 **[Open the demo →](demo/)** to see the output on a fake rig before installing anything.
 
+<br>
+
+![The live editor, mid-annotation](images/screenshots/editor-annotate.png)
+
+*The live editor (`serve`) — click any button to write a plain-English annotation. Shown here on the dummy demo data, no real show/Companion data.*
+
 ---
 
 ## Quickstart
@@ -55,6 +61,12 @@ happy with it, click **Export Site** in the header — that freezes everything i
 folder you can hand to someone else, no server or install required to view it.
 
 That's the whole loop: **scrape once, write notes in the browser, export when done.**
+
+<br>
+
+![The frozen static handoff site](images/screenshots/demo-page.png)
+
+*What `build` (or "Export Site") produces — a self-contained folder, `index.html` opens directly, no server needed. Hover a button for its write-up.*
 
 ---
 

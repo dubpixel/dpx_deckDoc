@@ -23,8 +23,9 @@ function isIncluded(page) {
   return pageSelection[String(page)] !== false;
 }
 
-function imgUrl(page, row, col) {
-  return `/images/${currentDevice}/${page}/${row}-${col}.png`;
+function imgUrl(e) {
+  const ext = e.image?.includes(".") ? e.image.slice(e.image.lastIndexOf(".")) : ".png";
+  return `/images/${currentDevice}/${e.page}/${e.row}-${e.col}${ext}`;
 }
 
 async function loadDevices() {
@@ -140,7 +141,7 @@ function renderNav() {
     thumb.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     for (const e of entries) {
       const img = document.createElement("img");
-      img.src = imgUrl(e.page, e.row, e.col);
+      img.src = imgUrl(e);
       img.style.gridRow = e.row + 1;
       img.style.gridColumn = e.col + 1;
       thumb.appendChild(img);
@@ -192,7 +193,7 @@ function renderDeck() {
     }
 
     const img = document.createElement("img");
-    img.src = imgUrl(e.page, e.row, e.col);
+    img.src = imgUrl(e);
     img.alt = `${e.row}/${e.col}`;
     cell.appendChild(img);
 
@@ -339,7 +340,7 @@ function renderPageList() {
     thumb.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     for (const e of entries) {
       const img = document.createElement("img");
-      img.src = imgUrl(e.page, e.row, e.col);
+      img.src = imgUrl(e);
       img.style.gridRow = e.row + 1;
       img.style.gridColumn = e.col + 1;
       thumb.appendChild(img);

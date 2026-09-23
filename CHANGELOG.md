@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public GitHub Pages manual (`index.md`) — beginner-friendly quickstart, plain-language CLI reference, annotation field reference, links to the demo ([#6](https://github.com/dubpixel/dpx_deckDoc/issues/6))
 - Public demo site with fabricated dummy data (`scripts/generate-demo-site.js` → `demo-src/device/` → `/demo/`) — no real Companion instance or show data involved; runs through the real `buildSite()` pipeline, published as a static read-only site ([#7](https://github.com/dubpixel/dpx_deckDoc/issues/7), option 1 of that ticket's three design options)
 - README links to the manual and demo in the header nav row
+- README + manual now embed real screenshots of the live editor and static handoff site (captured against the dummy demo data, no real show data)
+
+### Fixed
+- Live editor (`serve`) hardcoded `.png` when requesting button images, and its `/images/:device/...` route hardcoded `Content-Type: image/png` regardless of the file's real extension — any captured image that isn't a PNG (e.g. the new demo's SVG placeholders) rendered as a broken image in the editor. Found while shooting the manual's screenshots. Both now derive the real extension/MIME from the file.
 
 ### Note
 - Filed [#9](https://github.com/dubpixel/dpx_deckDoc/issues/9) for improving first-run CLI ergonomics/install experience, per direct feedback that the docs are hard for a beginner to parse — scoped, not built, this pass
