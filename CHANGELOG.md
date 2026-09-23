@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.9.0] - 2026-09-23
+
+### Added
+- `node src/cli.js init` — guided interactive setup (`src/cli.js` `cmdInit`, via `node:readline/promises`) that prompts for the Companion host (required, re-prompts until non-empty, never defaulted/guessed) and an optional device name, then runs the same `scrapeDevice()` the `scrape` subcommand uses and prints the exact `serve` command to run next
+- `--help`/`-h` on every subcommand (`init`/`demo`/`scrape`/`serve`/`build`/`capture`/`annotate`) via new `src/cliHelp.js` (centralized usage text) and `src/cliArgs.js` (`parseArgs` recognizes `-h`, `requireFlag()` throws a new `CliUsageError` for a missing/invalid required flag) — a missing `--host` now prints a one-line message ("scrape requires --host <value>. Try: node src/cli.js scrape --host 10.0.0.5") instead of a stack trace
+- `node src/cli.js demo` (alias `try`) — zero-setup local on-ramp that seeds a fabricated device (`src/demoDevice.js`: hand-written SVG placeholder buttons, structured sample annotations, zero network calls) under the `demo` slug and auto-launches `serve`; `--no-serve` seeds only
+- Closes [#9](https://github.com/dubpixel/dpx_deckDoc/issues/9) — first-run CLI ergonomics
+
+### Fixed
+- `scrape`/`init` surfaced Node's bare "fetch failed" when the Companion host was unreachable/wrong (the real reason was buried in `err.cause`) — now wraps the config-export fetch in try/catch and reports "Could not reach Companion at \<url\> (\<reason\>). Check the host/port and that Companion is running."
+- An optional path flag (`--out`/`--device`) given with no value (e.g. as the last CLI argument) parsed to the literal boolean `true` via `parseArgs` and crashed with a raw Node internal `TypeError` the moment it hit `path.join()`, across `capture`/`annotate`/`build`/`serve`/`scrape`/`init`/`demo` — new `stringFlag()` helper in `src/cliArgs.js` now falls back to the flag's documented default instead
+
+### Testing
+- `npm test`: 74/74 passing (up from 66 at the start of this pass) — 22 new tests for the pure-logic CLI modules plus 8 more covering the two fixes above (`test/cliArgs.test.js`, `test/demoDevice.test.js`, `test/scrape.test.js`)
+
 ## [0.8.0] - 2026-09-23
 
 ### Added

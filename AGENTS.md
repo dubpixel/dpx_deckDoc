@@ -6,9 +6,9 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.8.0, public GitHub Pages manual + dummy-data demo live (2026-09-23)
-**Branch:** `feature/pages-manual-and-demo`
-**Version File:** `VERSION` (currently 0.8.0)
+**Status:** v0.9.0, guided CLI setup + zero-setup local demo shipped (2026-09-23)
+**Branch:** `feature/cli-guided-setup`
+**Version File:** `VERSION` (currently 0.9.0)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 **Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
 
@@ -18,7 +18,10 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 | Component | Tech/Location | Purpose | Notes |
 |-----------|---------------|---------|-------|
-| One-shot scrape | Node / `src/scrape.js` | Pulls the config export, discovers all pages, captures every button, merges prefill — the primary entry point | `node src/cli.js scrape --host <ip> [--device <name>]` |
+| One-shot scrape | Node / `src/scrape.js` | Pulls the config export, discovers all pages, captures every button, merges prefill — the primary entry point | `node src/cli.js scrape --host <ip> [--device <name>]`; unreachable/wrong `--host` now surfaces a friendly "Could not reach Companion at ..." message instead of a bare "fetch failed" |
+| Guided setup | Node / `src/cli.js` (`cmdInit`) | Interactive `init` subcommand — prompts for Companion host (required, re-prompts until non-empty, never defaulted) and device name (optional), then runs the same `scrapeDevice()` `scrape` uses and prints the next `serve` command | `node src/cli.js init` |
+| Zero-setup local demo | Node / `src/demoDevice.js` + `src/cli.js` (`cmdDemo`) | `demo`/`try` subcommand — seeds a fabricated device (hand-written SVG placeholder buttons, sample annotations, zero network calls) under a `demo` slug and auto-launches `serve`; `--no-serve` seeds only | `node src/cli.js demo` |
+| CLI arg parsing/help | Node / `src/cliArgs.js` + `src/cliHelp.js` | `parseArgs`/`requireFlag`/`stringFlag` centralize flag parsing and required/optional-flag validation; `cliHelp.js` centralizes `--help`/`-h` usage text for every subcommand | A missing required flag throws `CliUsageError`, caught by `cli.js`'s top-level handler and printed as a one-line message, no stack trace; an optional path flag given with no value (e.g. `--out` as the last arg) falls back to its default instead of crashing |
 | Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper |
 | Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
 | Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
@@ -89,6 +92,10 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 ### Common Operations
 
+**Zero-setup local try (no Companion instance needed):** `node src/cli.js demo` (alias `try`) — seeds a fabricated `demo` device and launches `serve` automatically; `--no-serve` to seed only.
+
+**Guided first scrape:** `node src/cli.js init` — prompts for Companion host + device name, then runs the same capture as `scrape`.
+
 **Scrape an entire Companion instance (the normal path):** `node src/cli.js scrape --host <ip> [--device <name>] [--out devices]` — one shot: pulls the export, discovers every page, captures every button, merges prefill.
 
 **Author annotations live:** `node src/cli.js serve --out devices` → `http://localhost:4321`, device switcher + click-to-edit.
@@ -109,8 +116,9 @@ See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-m
 
 **Closed:** [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6) and [#7 — demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7), built together in v0.8.0. #7 shipped as option 1 from its own ticket (static frozen `build` output, dummy data, zero real Companion data) — option 2 (localStorage-backed fake editing) and option 3 (real hosted `serve`) remain possible future upgrades, not started.
 
-**Open, scoped-but-not-built tickets:**
-- [#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9): beginner feedback that install + CLI flags are hard to parse; ideas include a guided `init` command, per-subcommand `--help`, possible npm publish — not scoped to a specific approach yet
+[#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9), built in v0.9.0: guided `node src/cli.js init` (prompts for host/device, runs the real scrape), `--help`/`-h` + friendly required-flag validation on every subcommand (`src/cliArgs.js` + `src/cliHelp.js`), and a zero-setup `node src/cli.js demo`/`try` that seeds a fabricated local device and launches `serve` with no network calls. npm publish was scoped in the original ticket but not part of this pass.
+
+**Open, scoped-but-not-built tickets:** none currently.
 
 ### Development Philosophy
 
