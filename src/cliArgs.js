@@ -82,3 +82,26 @@ export function requireFlag(args, name, { command, example }) {
   }
   return value;
 }
+
+/**
+ * Reads an OPTIONAL string flag, falling back to `fallback` whenever the
+ * flag wasn't a real string — including the bare boolean `true` parseArgs()
+ * produces for a flag typed with no following value (e.g. `--out` as the
+ * last argument, or immediately followed by another `--flag`). Found while
+ * QA-testing issue #9: every subcommand piped `args.out ?? "devices"`
+ * straight into `path.join()`, so `--out` with no value passed the literal
+ * boolean `true` through and crashed with a raw Node internal error ("The
+ * 'path' argument must be of type string. Received type boolean (true)")
+ * instead of just falling back — the same class of confusing/uncaught
+ * error issue #9 exists to eliminate, just via a bug rather than a missing
+ * flag. Use this for any optional flag a command later hands to fs/path.
+ *
+ * @param {Record<string, unknown>} args
+ * @param {string} name - flag name, without leading `--`
+ * @param {string} [fallback] - value to use when the flag isn't a usable string
+ * @returns {string|undefined}
+ */
+export function stringFlag(args, name, fallback) {
+  const value = args[name];
+  return typeof value === "string" && value !== "" ? value : fallback;
+}

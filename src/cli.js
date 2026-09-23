@@ -40,12 +40,12 @@ import { serve } from "./serve.js";
 import { appendManifest } from "./manifest.js";
 import { scrapeDevice } from "./scrape.js";
 import { seedDemoDevice } from "./demoDevice.js";
-import { parseArgs, requireFlag, CliUsageError } from "./cliArgs.js";
+import { parseArgs, requireFlag, stringFlag, CliUsageError } from "./cliArgs.js";
 import { printHelp } from "./cliHelp.js";
 
 async function cmdCapture(args) {
   if (args.help) return printHelp("capture");
-  const outDir = args.out ?? "output";
+  const outDir = stringFlag(args, "out", "output");
   const page = Number(args.page ?? 1);
 
   if (args.mode === "satellite") {
@@ -86,7 +86,7 @@ async function cmdCapture(args) {
 
 async function cmdAnnotate(args) {
   if (args.help) return printHelp("annotate");
-  const outDir = args.out ?? "output";
+  const outDir = stringFlag(args, "out", "output");
   const config = requireFlag(args, "config", { command: "annotate", example: "/path/to/export.companionconfig" });
 
   const buttonMetas = await parseCompanionExport(config);
@@ -104,14 +104,14 @@ async function cmdAnnotate(args) {
 
 async function cmdBuild(args) {
   if (args.help) return printHelp("build");
-  const outDir = args.out ?? "output";
+  const outDir = stringFlag(args, "out", "output");
   const result = await buildSite({ outDir });
   console.log(`Built site: ${result.pageCount} page(s), ${result.buttonCount} button image(s) -> ${result.siteDir}/index.html`);
 }
 
 async function cmdServe(args) {
   if (args.help) return printHelp("serve");
-  const outDir = args.out ?? "devices";
+  const outDir = stringFlag(args, "out", "devices");
   const port = Number(args.port ?? 4321);
   await serve({ outDir, port });
 }
@@ -122,8 +122,8 @@ async function cmdScrape(args) {
   await scrapeDevice({
     host,
     port: args.port ? Number(args.port) : undefined,
-    device: args.device,
-    devicesRoot: args.out ?? "devices",
+    device: stringFlag(args, "device", undefined),
+    devicesRoot: stringFlag(args, "out", "devices"),
   });
 }
 
@@ -134,7 +134,7 @@ async function cmdScrape(args) {
  */
 async function cmdInit(args) {
   if (args.help) return printHelp("init");
-  const devicesRoot = args.out ?? "devices";
+  const devicesRoot = stringFlag(args, "out", "devices");
 
   const rl = readline.createInterface({ input: processStdin, output: processStdout });
   try {
@@ -172,8 +172,8 @@ async function cmdInit(args) {
  */
 async function cmdDemo(args) {
   if (args.help) return printHelp("demo");
-  const devicesRoot = args.out ?? "devices";
-  const deviceSlug = typeof args.device === "string" ? args.device : "demo";
+  const devicesRoot = stringFlag(args, "out", "devices");
+  const deviceSlug = stringFlag(args, "device", "demo");
   const port = Number(args.port ?? 4321);
 
   console.log("Seeding a fabricated demo device (no real Companion instance, no network)...");

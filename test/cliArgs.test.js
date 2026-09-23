@@ -6,7 +6,7 @@
 
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { parseArgs, requireFlag, CliUsageError } from "../src/cliArgs.js";
+import { parseArgs, requireFlag, stringFlag, CliUsageError } from "../src/cliArgs.js";
 
 describe("parseArgs", () => {
   test("parses --flag value pairs", () => {
@@ -72,5 +72,34 @@ describe("requireFlag", () => {
     } catch (err) {
       assert.match(err.message, /^scrape requires --host <value>\. Try: node src\/cli\.js scrape --host 10\.0\.0\.5$/);
     }
+  });
+});
+
+describe("stringFlag", () => {
+  // Found while QA-testing issue #9: every subcommand used to read optional
+  // path-like flags as `args.out ?? "devices"`, which only catches
+  // `undefined` — a flag typed with no value (e.g. `--out` as the very last
+  // argument) parses to the literal boolean `true`, which then crashed
+  // downstream with a raw Node internal error the first time it hit
+  // `path.join()`. stringFlag() is the fix: treat anything that isn't a
+  // real, non-empty string the same as "not given".
+  test("returns the value when the flag is a real string", () => {
+    assert.equal(stringFlag({ out: "devices/foh" }, "out", "devices"), "devices/foh");
+  });
+
+  test("falls back when the flag is absent", () => {
+    assert.equal(stringFlag({}, "out", "devices"), "devices");
+  });
+
+  test("falls back when the flag was given with no value (bare boolean true)", () => {
+    assert.equal(stringFlag({ out: true }, "out", "devices"), "devices");
+  });
+
+  test("falls back when the flag value is an empty string", () => {
+    assert.equal(stringFlag({ out: "" }, "out", "devices"), "devices");
+  });
+
+  test("fallback is optional and defaults to undefined", () => {
+    assert.equal(stringFlag({}, "device"), undefined);
   });
 });
