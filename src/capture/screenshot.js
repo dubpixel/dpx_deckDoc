@@ -43,11 +43,99 @@
 // pages (see src/scrape.js) reuses one browser across all of them via
 // `captureManyPages` instead of relaunching per page.
 //
+// CLASSIC (pre-4.x) COMPANION UI (confirmed 2026-09-23 against a real 3.0.0
+// instance): a completely different tablet.html DOM — no `.button-control`
+// virtualized scroller at all. Buttons are flat `.bank img` elements (inside
+// `.bank-border`, inside a `.bank.clickable`), ALL rendered into the DOM at
+// once with no scrolling required, `alt="Button N"` where N resets to 1 at
+// the start of each page (not a global index), and the bitmap is the img's
+// own `src` — often `image/bmp`, not `image/png`. A scrape against this kind
+// of instance previously silently captured zero buttons on every page,
+// because the code only ever looked for `.button-control`. Detected by
+// checking which selector is present after the first page load; the grid
+// shape (columns) is measured from real bounding-box rows rather than
+// hardcoded, since older Companion configs aren't all the same bank size.
+//
 // ================================================================================
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+
+export function extForDataUrl(dataUrl) {
+  const match = dataUrl.match(/^data:image\/([a-z0-9]+);base64,/);
+  return match ? `.${match[1]}` : ".png";
+}
+
+/**
+ * Pure chunking/geometry logic for the classic grid, split out from the
+ * browser-coupled `$$eval` call so it's unit-testable without a real page.
+ * @param {{alt:string, src:string, top:number}[]} raw - DOM order
+ * @returns {{row:number, col:number, dataUrl:string}[][]} one array per page
+ */
+export function chunkClassicGrid(raw) {
+  const chunks = [];
+  let current = [];
+  for (const btn of raw) {
+    const n = Number((btn.alt.match(/Button (\d+)/) ?? [])[1]);
+    if (!n) continue;
+    if (n === 1 && current.length) {
+      chunks.push(current);
+      current = [];
+    }
+    current.push(btn);
+  }
+  if (current.length) chunks.push(current);
+
+  return chunks.map((chunk) => {
+    // columns = how many buttons share the first row's top offset
+    const firstTop = chunk[0].top;
+    let cols = chunk.findIndex((b) => b.top !== firstTop);
+    if (cols <= 0) cols = chunk.length; // single row
+    return chunk.map((b, i) => ({
+      row: Math.floor(i / cols),
+      col: i % cols,
+      dataUrl: b.src,
+    }));
+  });
+}
+
+/**
+ * Detects which Companion tablet UI generation is loaded on the current
+ * page — "modern" (4.x's `.button-control` virtualized scroller), "classic"
+ * (pre-4.x's flat `.bank img` grid), or "unknown" if neither is present
+ * (e.g. the page failed to load, or a future/unrecognized UI). Never
+ * guesses silently past "unknown" — callers should fail loudly rather than
+ * capture zero buttons without telling anyone why.
+ */
+async function detectUiKind(browserPage) {
+  return browserPage.evaluate(() => {
+    if (document.querySelector(".button-control")) return "modern";
+    if (document.querySelector(".bank img")) return "classic";
+    return "unknown";
+  });
+}
+
+/**
+ * Extracts every button from the CLASSIC (pre-4.x) Companion tablet UI —
+ * flat `.bank img` elements, no scrolling/virtualization. Returns them
+ * chunked by page in DOM order (each chunk's own `alt="Button N"` sequence
+ * restarts at 1), with row/col derived from measured grid columns rather
+ * than assumed.
+ *
+ * @param {import("playwright").Page} browserPage
+ * @returns {Promise<{row:number, col:number, dataUrl:string}[][]>} one array per page, in DOM order
+ */
+async function extractClassicGrid(browserPage) {
+  const raw = await browserPage.$$eval(".bank img", (imgs) =>
+    imgs.map((img) => ({
+      alt: img.alt,
+      src: img.src,
+      top: img.getBoundingClientRect().top,
+    }))
+  );
+  return chunkClassicGrid(raw);
+}
 
 /**
  * Extracts every button on one page from an already-open Playwright page
@@ -66,7 +154,7 @@ async function writeButtonImages(found, outDir) {
   const written = [];
   for (const { row, col, dataUrl } of found.values()) {
     const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-    const filePath = path.join(outDir, `${row}-${col}.png`);
+    const filePath = path.join(outDir, `${row}-${col}${extForDataUrl(dataUrl)}`);
     await fs.writeFile(filePath, Buffer.from(base64, "base64"));
     written.push({ row, col, path: filePath });
   }
@@ -159,6 +247,19 @@ export async function captureScreenshotPage({ url, outDir, page, maxScrollSteps 
   const browser = await chromium.launch();
   try {
     const browserPage = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    await browserPage.goto(url, { waitUntil: "networkidle" });
+    const kind = await detectUiKind(browserPage);
+    if (kind === "unknown") {
+      throw new Error(`Could not recognize this Companion tablet UI's DOM at ${url} — neither the modern (.button-control) nor classic (.bank img) button layout was found. The page may have failed to load, or this is an unsupported Companion version.`);
+    }
+
+    if (kind === "classic") {
+      const chunks = await extractClassicGrid(browserPage);
+      const found = new Map(chunks[0]?.map((b) => [`${b.row}-${b.col}`, b]) ?? []);
+      const written = await writeButtonImages(found, outDir);
+      return { page, buttons: written };
+    }
+
     const all = await extractAllPages(browserPage, url, maxScrollSteps);
     const found = new Map();
     for (const [key, btn] of all) {
@@ -191,6 +292,29 @@ export async function captureManyPages({ pages, onProgress, maxScrollSteps }) {
   const browser = await chromium.launch();
   try {
     const browserPage = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    await browserPage.goto(pages[0].url, { waitUntil: "networkidle" });
+    const kind = await detectUiKind(browserPage);
+    if (kind === "unknown") {
+      throw new Error(`Could not recognize this Companion tablet UI's DOM at ${pages[0].url} — neither the modern (.button-control) nor classic (.bank img) button layout was found. The page may have failed to load, or this is an unsupported Companion version.`);
+    }
+
+    if (kind === "classic") {
+      onProgress?.("Classic (pre-4.x) Companion UI detected — no scroll virtualization, reading the full flat button grid in one pass...");
+      const chunks = await extractClassicGrid(browserPage);
+      const results = [];
+      for (let i = 0; i < pages.length; i++) {
+        const { page, outDir } = pages[i];
+        const found = new Map((chunks[i] ?? []).map((b) => [`${b.row}-${b.col}`, b]));
+        const written = await writeButtonImages(found, outDir);
+        results.push({ page, buttons: written });
+        onProgress?.(`  page ${page}: ${written.length} buttons`);
+      }
+      if (chunks.length !== pages.length) {
+        onProgress?.(`  note: the classic UI rendered ${chunks.length} page(s) of buttons but the config export listed ${pages.length} — extra/missing pages were not captured.`);
+      }
+      return results;
+    }
+
     onProgress?.("Scrolling through the full instance in one pass...");
     const all = await extractAllPages(browserPage, pages[0].url, maxScrollSteps);
 

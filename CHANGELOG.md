@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 
+## [0.9.1] - 2026-09-23
+
+### Fixed
+- **Capture silently returned zero buttons for every page against a pre-4.x Companion instance.** Found testing against a real Companion 3.0.0 rig: that generation's tablet UI uses a completely different DOM (`.bank img`, all buttons rendered flat with no scroll virtualization, `alt="Button N"` resetting per page, bitmaps often `image/bmp` not PNG) than the `.button-control` layout the capture code was built and confirmed against. `src/capture/screenshot.js` now detects which UI generation is loaded and uses the right extraction strategy for each; an unrecognized DOM now throws a clear error instead of silently capturing nothing. Captured images are written with their real extension instead of a hardcoded `.png`.
+- Live editor's `/images/` route and `imgUrl()` are extension-aware for the new `.bmp` case (same fix pattern as the earlier SVG one in v0.8.0 — added `.bmp` to the MIME map)
+
+### Added
+- Regression tests for the new classic-grid chunking/extension logic (`test/screenshot.classicGrid.test.js`)
+
 ## [0.8.0] - 2026-09-23
 
 ### Added
