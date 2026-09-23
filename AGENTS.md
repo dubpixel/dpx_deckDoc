@@ -6,10 +6,11 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.7.1, repo now public; functional end-to-end against real Companion instances (2026-09-23)
-**Branch:** `docs/public-repo-and-site-tickets`
-**Version File:** `VERSION` (currently 0.7.1)
+**Status:** v0.8.0, public GitHub Pages manual + dummy-data demo live (2026-09-23)
+**Branch:** `feature/pages-manual-and-demo`
+**Version File:** `VERSION` (currently 0.8.0)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
+**Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
 
 ### Architecture (2-minute summary)
 
@@ -28,6 +29,8 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Regression tests | Node built-in `node:test` / `test/` | Covers the annotation store, config parser (schema-accurate fixture), manifest/page-selection helpers, `buildSite()`, and `serve.js`'s real HTTP routes | `npm test` — zero added dependencies. Capture itself is not unit-tested (browser/DOM-coupled); verify against a real instance |
 | Site generator | Node / `src/site/build.js` + `site-template/` | Builds one device's frozen static handoff site | No bundler; plain `<script>` (not `type="module"` — fails under `file://`, see Gotchas) |
 | Satellite capture (reference only) | Node (`net` sockets) / `src/capture/satellite.js` | Protocol-correct Satellite API client, not part of the primary pipeline | Dropped as unnecessary — see Key Decisions |
+| Public manual | Jekyll (GitHub Pages) / `index.md` + `_config.yml` | The repo's public website root — beginner-friendly quickstart, CLI reference, annotation field reference, links to the demo | No local build step; GitHub Pages runs Jekyll itself off `_config.yml`'s `remote_theme` |
+| Demo site | Node / `scripts/generate-demo-site.js` → `demo-src/device/` → `demo/` | Fabricates a small fake device (SVG placeholder buttons, no real Companion instance, no network) and runs it through the real `buildSite()` pipeline; output is committed static HTML under `/demo/` for Pages | Re-run `node scripts/generate-demo-site.js` after any `site-template/` or demo-content change; `demo/` is committed (not gitignored) since Pages serves it directly |
 | Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
 
 ### Agent Rules (for this repo)
@@ -81,6 +84,8 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 7. **`.companionconfig` schema, confirmed against a real export** (Companion 4.3.4, export version 12, pulled from `/int/export/full`): gzip-compressed JSON; `pages[n].controls[row][col]` (nested by row then col, not a flat key); actions at `control.steps["0"].action_sets.down`, each `{type:"action", definitionId, connectionId, options}` — `definitionId` is the action name, not `action`/`actionId`; `data.instances[connectionId].label` gives the connection's display name. Non-`"button"` control types (`pageup`/`pagedown`/`pagenum`) are Companion's built-in page-nav controls, not configurable buttons.
 8. **Satellite API `ADD-SUB` requires Companion >= ~4.3.0 AND an explicit "Subscriptions" setting enabled** — confirmed both gates independently (an older instance rejected the command entirely; a 4.3.4 instance understood it but replied `Subscriptions not enabled`). Moot now since Satellite capture was dropped from the primary pipeline (see Key Decisions), but kept as a protocol-correct reference in `src/capture/satellite.js`.
 9. **The `[hidden]` attribute needs an explicit CSS override if the element also has a class-based `display` rule.** A modal styled `.modal-overlay { display: flex; ... }` stays visible even with `hidden` set on the element — the class selector and the browser's built-in `[hidden] { display: none }` UA rule have equal specificity, and the later-loaded stylesheet (yours) wins. Fix: `[hidden] { display: none !important; }` near the top of `editor.css`. Cost real time — both modals appeared stuck open on first load until this was added.
+10. **The live editor used to hardcode `.png`/`image/png` for button images (`editor.js`'s `imgUrl()` and `serve.js`'s `/images/:device/...` route).** Never noticed before because real `scrape` captures are always PNG — the demo's SVG placeholders exposed it as broken images in the editor. Both now derive the real extension/content-type from the file itself. If a future capture backend writes a non-PNG format, this is already handled.
+11. **Before screenshotting `serve` for public docs, confirm nothing else is already bound to port 4321.** A stale background `serve` process from an earlier task can still be listening, and a fresh `serve --out <dir>` call that fails to bind (port in use) leaves you silently screenshotting whatever the *old* process is serving — which may be a real captured device, not the fixture you intended. Check `lsof -i :4321` and kill anything already there first; verify `curl localhost:4321/api/devices` shows only the expected device(s) before capturing.
 
 ### Common Operations
 
@@ -94,15 +99,18 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 **Run the regression suite:** `npm test`.
 
+**Regenerate the public demo site:** `node scripts/generate-demo-site.js` — rebuilds `demo-src/device/` (fake data) and `/demo/` (frozen static output) from scratch; run after any `site-template/` change so the published demo stays current.
+
 **Known test instances:** `10.196.11.26` (Companion 4.2.5) and `127.0.0.1:8000` (Companion 4.3.4, same show config, local dev machine) are available for development/testing. Treat both as real dev targets unless told otherwise — do not assume it's safe to run destructive/state-changing commands against either beyond capture.
 
 ### Reference
 
 See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-mode ideas (tooltips vs. margin notes), and open TODOs.
 
-**Open, scoped-but-not-built tickets** (repo went public 2026-09-23, these are next):
-- [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6): the repo's public website root, a real user manual, links out to the demo
-- [#7 — Interactive demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7): dummy-data demo on GitHub Pages; ticket lays out three interactivity options (static frozen build / client-side-only fake editing via localStorage / real hosted `serve`) with a recommendation to start static and upgrade to localStorage-backed editing if worth it — real hosted `serve` is out of scope for GitHub Pages (static-only)
+**Closed:** [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6) and [#7 — demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7), built together in v0.8.0. #7 shipped as option 1 from its own ticket (static frozen `build` output, dummy data, zero real Companion data) — option 2 (localStorage-backed fake editing) and option 3 (real hosted `serve`) remain possible future upgrades, not started.
+
+**Open, scoped-but-not-built tickets:**
+- [#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9): beginner feedback that install + CLI flags are hard to parse; ideas include a guided `init` command, per-subcommand `--help`, possible npm publish — not scoped to a specific approach yet
 
 ### Development Philosophy
 

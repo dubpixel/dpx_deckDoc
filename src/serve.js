@@ -42,6 +42,7 @@ const MIME = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".svg": "image/svg+xml",
 };
 
 async function loadManifest(dir) {
@@ -274,7 +275,8 @@ export async function serve({ outDir, port = 4321 }) {
       const imgPath = path.join(dir, "images", ...rest);
       if (!imgPath.startsWith(path.join(dir, "images"))) return send(res, 403, "Forbidden", "text/plain");
       if (!fsSync.existsSync(imgPath)) return send(res, 404, "Not found", "text/plain");
-      return send(res, 200, await fs.readFile(imgPath), "image/png");
+      const imgType = MIME[path.extname(imgPath)] ?? "image/png";
+      return send(res, 200, await fs.readFile(imgPath), imgType);
     }
 
     return serveStatic(res, EDITOR_DIR, url.pathname);

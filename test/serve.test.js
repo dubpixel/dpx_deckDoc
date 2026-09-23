@@ -34,10 +34,14 @@ before(async () => {
   const imgDir = path.join(deviceDir, "images", "1");
   await fs.mkdir(imgDir, { recursive: true });
   await fs.writeFile(path.join(imgDir, "0-0.png"), TINY_PNG);
+  await fs.writeFile(path.join(imgDir, "0-1.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
 
   await fs.writeFile(
     path.join(deviceDir, "manifest.json"),
-    JSON.stringify([{ page: 1, row: 0, col: 0, image: path.join(imgDir, "0-0.png") }])
+    JSON.stringify([
+      { page: 1, row: 0, col: 0, image: path.join(imgDir, "0-0.png") },
+      { page: 1, row: 0, col: 1, image: path.join(imgDir, "0-1.svg") },
+    ])
   );
   await fs.writeFile(path.join(deviceDir, "pages.json"), JSON.stringify({ 1: "Test Page" }));
   await fs.writeFile(
@@ -62,7 +66,7 @@ describe("GET /api/devices", () => {
     assert.equal(devices.length, 1);
     assert.equal(devices[0].slug, "test-device");
     assert.equal(devices[0].pageCount, 1);
-    assert.equal(devices[0].buttonCount, 1);
+    assert.equal(devices[0].buttonCount, 2);
     assert.equal(devices[0].host, "10.0.0.5", "device.json's host must surface in the device list");
     assert.equal(devices[0].port, 8000);
   });
@@ -106,7 +110,7 @@ describe("GET /api/data", () => {
     const res = await fetch(`${baseUrl}/api/data?device=test-device`);
     assert.equal(res.status, 200);
     const data = await res.json();
-    assert.equal(data.manifest.length, 1);
+    assert.equal(data.manifest.length, 2);
     assert.deepEqual(data.pageTitles, { "1": "Test Page" });
     assert.deepEqual(data.annotations, {});
   });
@@ -122,6 +126,12 @@ describe("GET /images/:device/:page/:row-col.png", () => {
   test("404s for an unknown device in the image path", async () => {
     const res = await fetch(`${baseUrl}/images/nonexistent/1/0-0.png`);
     assert.equal(res.status, 404);
+  });
+
+  test("serves a non-PNG captured image with its real content-type, not a hardcoded image/png", async () => {
+    const res = await fetch(`${baseUrl}/images/test-device/1/0-1.svg`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("content-type"), "image/svg+xml");
   });
 });
 

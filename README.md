@@ -6,7 +6,7 @@
 <!-- PROJECT SHIELDS -->
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.7.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.8.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square)
 ![Status](https://img.shields.io/badge/status-functional-brightgreen?style=flat-square)
 
@@ -22,7 +22,9 @@
     Capture every button, annotate it, ship it as a browsable, editable site — show-control documentation without the live walkthrough.
     <br />
      »  
-     <a href="https://github.com/dubpixel/dpx_deckDoc"><strong>Project Here!</strong></a>
+     <a href="https://dubpixel.github.io/dpx_deckDoc/"><strong>Read the Manual</strong></a>
+     »  
+     <a href="https://dubpixel.github.io/dpx_deckDoc/demo/"><strong>Try the Demo</strong></a>
      »  
      <br />
     <a href="https://github.com/dubpixel/dpx_deckDoc/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
@@ -73,6 +75,14 @@ A real Companion setup can have dozens of pages and hundreds of buttons wired to
 Use cases: Stream Deck / Companion button-map documentation, show-control runbooks, operator handoff docs, broadcast control-room reference sheets, venue/FOH button legends.
 
 See the full concept doc on Notion (`dpx_labs / dpx_deckDoc`) for background and open TODOs.
+
+<br>
+
+| Live editor — click a button to write it up | Static handoff site — hover for the annotation |
+|---|---|
+| ![Live editor annotate view](images/screenshots/editor-annotate.png) | ![Static handoff site page](images/screenshots/demo-page.png) |
+
+*(screenshots above are from the [dummy-data demo](https://dubpixel.github.io/dpx_deckDoc/demo/) — no real Companion instance or show data)*
 
 </br>
 
@@ -146,8 +156,8 @@ Node's built-in test runner (`node --test`, zero extra dependencies) — covers 
 - [x] One-shot `scrape` command — discovers and captures an entire instance in one pass, verified against a real 99-page rig
 - [x] Multi-device support — device → pages → buttons tree, device switcher in the live editor
 - [x] Device host metadata + delete-a-device in the live editor
-- [ ] GitHub Pages manual (repo website) — [issue #6](https://github.com/dubpixel/dpx_deckDoc/issues/6)
-- [ ] Interactive demo site with dummy data — [issue #7](https://github.com/dubpixel/dpx_deckDoc/issues/7)
+- [x] GitHub Pages manual (repo website) — [issue #6](https://github.com/dubpixel/dpx_deckDoc/issues/6)
+- [x] Demo site with dummy data on GitHub Pages (static/read-only) — [issue #7](https://github.com/dubpixel/dpx_deckDoc/issues/7)
 
 See the [open issues](https://github.com/dubpixel/dpx_deckDoc/issues) for a full list of proposed features (and known issues).
 
