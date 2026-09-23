@@ -44,7 +44,19 @@ export async function scrapeDevice({ host, port = 8000, device, devicesRoot = "d
 
   const base = `http://${host}:${port}`;
   onProgress(`Fetching config export from ${base}/int/export/full ...`);
-  const res = await fetch(`${base}/int/export/full`);
+  let res;
+  try {
+    res = await fetch(`${base}/int/export/full`);
+  } catch (err) {
+    // A connection-level failure (host unreachable, connection refused, DNS
+    // failure, etc.) throws from fetch() itself with an unhelpful generic
+    // message ("fetch failed") and the real reason buried in err.cause —
+    // surface a one-line, actionable message instead (issue #9: a beginner
+    // mistyping --host/--port in `scrape`/`init` should never see a bare
+    // "fetch failed").
+    const reason = err.cause?.code ?? err.cause?.message ?? err.message;
+    throw new Error(`Could not reach Companion at ${base} (${reason}). Check the host/port and that Companion is running.`);
+  }
   if (!res.ok) {
     throw new Error(`Config export request failed: ${res.status} ${res.statusText} (is Companion running at ${base}?)`);
   }
