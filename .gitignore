@@ -11,6 +11,10 @@ output*/
 # Captured device data (scrape output — real button images/config, not source)
 devices/
 
+# Local-only backups of real device captures (never committed — used as
+# source material for building a sanitized/fictionalized demo dataset)
+backups/
+
 # Demo generator's intermediate build output — the committed copy lives at /demo/
 demo-src/device/site/
 
