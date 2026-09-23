@@ -116,6 +116,21 @@ See the full concept doc on Notion (`dpx_labs / dpx_deckDoc`) for background and
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+**New here? Start with one of these — no flags to memorize:**
+
+```bash
+node src/cli.js demo                                            # zero-setup: seeds a fake device with dummy data and launches the editor, no Companion instance needed
+node src/cli.js init                                            # guided setup: prompts for your Companion host, then scrapes it for you
+```
+
+`demo` (alias `try`) fabricates a small local device — placeholder button art, sample annotations, zero network calls — and opens the live editor on it automatically, so you can click around the real UI before pointing it at a real Companion instance. Pass `--no-serve` to just seed the device without launching the editor.
+
+`init` asks a couple of questions (Companion host — required, re-prompted until you give one; device name — optional) instead of requiring flags up front, runs the same capture `scrape` does, and prints the exact `serve` command to run next.
+
+Every subcommand also takes `--help`/`-h` for its usage text, and a missing required flag (e.g. `scrape` without `--host`) prints a friendly one-line message instead of a stack trace.
+
+**Once you know the flags, the direct commands:**
+
 ```bash
 node src/cli.js scrape --host <companion-ip> --device <name>   # one shot: capture everything
 node src/cli.js serve --out devices                            # live, editable authoring app
@@ -158,6 +173,7 @@ Node's built-in test runner (`node --test`, zero extra dependencies) — covers 
 - [x] Device host metadata + delete-a-device in the live editor
 - [x] GitHub Pages manual (repo website) — [issue #6](https://github.com/dubpixel/dpx_deckDoc/issues/6)
 - [x] Demo site with dummy data on GitHub Pages (static/read-only) — [issue #7](https://github.com/dubpixel/dpx_deckDoc/issues/7)
+- [x] Guided `init` command, `--help` on every subcommand, friendly flag validation, zero-setup local `demo`/`try` command — [issue #9](https://github.com/dubpixel/dpx_deckDoc/issues/9)
 
 See the [open issues](https://github.com/dubpixel/dpx_deckDoc/issues) for a full list of proposed features (and known issues).
 
