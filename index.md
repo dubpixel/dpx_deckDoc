@@ -24,13 +24,13 @@ None of that is obvious to someone who didn't build it.
 picture of every button, what it actually does, and a place to write that down — without hand-
 screenshotting anything.
 
-**[Open the demo →](demo/)** to see the output on a fake rig before installing anything.
+**[Open the demo →](demo/)** — a real 91-page, 2823-button rig, fully editable in your browser. Nothing you type there leaves your own browser; a "Reset Demo" button puts it back the way it was.
 
 <br>
 
 ![The live editor, mid-annotation](images/screenshots/editor-annotate.png)
 
-*The live editor (`serve`) — click any button to write a plain-English annotation. Shown here on the dummy demo data, no real show/Companion data.*
+*The live editor (`serve`) — click any button to write a plain-English annotation.*
 
 ---
 

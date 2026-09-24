@@ -12,7 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Note
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
-- Issue #14 updated: the editable demo is now a confirmed want, not just a scoped maybe.
+
+## [0.10.0] - 2026-09-24
+
+### Changed
+- **The public demo is rebuilt from a real captured device (91 pages, 2823 buttons) instead of a small hand-fabricated fixture — and is now EDITABLE.** Closes issue #14. User reviewed the source backup's content and confirmed it's fine to publish (no secrets, generic show-control page names/prefill data). Click any button to edit Heading/Body/Notice/Note/Label override; saved to that visitor's own `localStorage` only — never shared between visitors, never written back to this repo — with a "Reset Demo" button to clear it. This is option 2 from the original issue #7 design.
+- `scripts/generate-demo-site.js` now sources `backups/8H_LOCAL_v3.5.1--10.196.191.1--2026-09-23/` (real images/manifest/pages/annotations, host/port scrubbed) instead of fabricating placeholder SVGs, and swaps in `demo-template/`'s editable viewer/CSS in place of `site-template/`'s intentionally read-only ones after running the normal `buildSite()` pipeline
+- New `demo-template/` (viewer.js + style.css) — the public-demo-only editable UI; `site-template/` (the real static handoff-site viewer) is untouched and stays read-only by design
+
+## [0.9.2] - 2026-09-23
+
+### Fixed
+- **The classic (pre-4.x) UI fix in v0.9.1 was still incomplete: it fixed the DOM-selector mismatch but not a second, deeper bug.** That UI's button bitmaps load in asynchronously over a WebSocket after the page renders (`networkidle` doesn't wait for this — a long-lived WebSocket is never "in flight"). Reading the grid immediately after load caught most buttons still showing a shared placeholder frame. Confirmed against the real `8H_FRANK_v3.0.0` capture: only 63 of 3168 images (2%) were actually unique, versus ~94% unique on a comparable device captured via the modern/scroll path. Capture now polls a cheap signature of every button's image until it stops changing before extracting (`waitForClassicGridToSettle`/`isGridStable`).
+- **The existing local `8H_FRANK_v3.0.0` capture (and its `backups/` copy) predates this fix and still has the incomplete/placeholder content** — the show network is no longer reachable to re-scrape it. Re-run `scrape` against that instance next time it's reachable to get a correct capture; the fix itself is verified via a synthetic Playwright fixture that reproduces the same async-loading behavior (`test/screenshot.classicAsyncBitmaps.test.js`), since the real instance couldn't be re-tested live.
+
+### Added
+- `test/screenshot.classicAsyncBitmaps.test.js` — an intentional exception to "capture isn't unit-tested": drives the real `captureManyPages()` against a real Playwright browser and a local fixture server that reproduces the exact async-bitmap-swap behavior, proving the settle-wait actually works
+- Unit tests for `isGridStable()`'s stability decision
 
 ## [0.9.1] - 2026-09-23
 

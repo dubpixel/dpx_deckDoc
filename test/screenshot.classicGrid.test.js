@@ -14,7 +14,7 @@
 
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { extForDataUrl, chunkClassicGrid } from "../src/capture/screenshot.js";
+import { extForDataUrl, chunkClassicGrid, isGridStable } from "../src/capture/screenshot.js";
 
 describe("extForDataUrl", () => {
   test("derives the real extension from the data URL's mime type", () => {
@@ -69,5 +69,26 @@ describe("chunkClassicGrid", () => {
 
   test("returns an empty array for no input", () => {
     assert.deepEqual(chunkClassicGrid([]), []);
+  });
+});
+
+describe("isGridStable", () => {
+  test("false until at least stableRounds signatures have been collected", () => {
+    assert.equal(isGridStable([1], 3), false);
+    assert.equal(isGridStable([1, 1], 3), false);
+  });
+
+  test("true once the trailing stableRounds signatures are all equal", () => {
+    assert.equal(isGridStable([1, 2, 2, 2], 3), true);
+  });
+
+  test("false if the grid is still changing (trailing values differ)", () => {
+    assert.equal(isGridStable([1, 2, 3, 4], 3), false);
+  });
+
+  test("a single still-changing value among otherwise-stable ones resets stability", () => {
+    // mirrors the real scenario: bitmaps settle, then one more arrives late
+    assert.equal(isGridStable([5, 5, 5, 6], 3), false);
+    assert.equal(isGridStable([5, 5, 5, 6, 6, 6], 3), true);
   });
 });

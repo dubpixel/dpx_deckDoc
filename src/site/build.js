@@ -63,6 +63,7 @@ export async function buildSite({ outDir }) {
   await fs.copyFile(path.join(TEMPLATE_DIR, "style.css"), path.join(siteDir, "style.css"));
   await fs.copyFile(path.join(TEMPLATE_DIR, "viewer.js"), path.join(siteDir, "viewer.js"));
   await fs.copyFile(path.join(TEMPLATE_DIR, "dubpixel_identicon.png"), path.join(siteDir, "dubpixel_identicon.png"));
+  await fs.copyFile(path.join(TEMPLATE_DIR, "dubbug_favicon.png"), path.join(siteDir, "dubbug_favicon.png"));
 
   const meta = getMeta();
 
@@ -143,6 +144,7 @@ function renderShell(bodyHtml, meta) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dpx_deckDoc</title>
+<link rel="icon" href="dubbug_favicon.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>

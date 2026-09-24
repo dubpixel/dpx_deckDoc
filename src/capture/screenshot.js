@@ -56,6 +56,21 @@
 // shape (columns) is measured from real bounding-box rows rather than
 // hardcoded, since older Companion configs aren't all the same bank size.
 //
+// ASYNC BITMAP GOTCHA (confirmed 2026-09-23, after the fix above still
+// produced an incomplete-looking real scrape): the classic UI's `<img>`
+// elements exist in the DOM immediately on page load, but each one's real
+// `src` streams in asynchronously afterward (this UI subscribes over a
+// WebSocket — see the `pages:subscribe`/`preview:page:subscribe` console
+// messages it sends — not a synchronous render). `waitUntil: "networkidle"`
+// does NOT wait for this, since a long-lived WebSocket is never "in
+// flight" the way a fetch/XHR is. Reading the grid immediately after load
+// caught most buttons still showing a generic placeholder frame — verified
+// against a real 99-page/3168-button capture where only 63 images (2%)
+// were actually unique, versus ~94% unique on a comparable real device
+// captured via the modern/scroll path. Fixed by polling a cheap signature
+// of every image's `src` until it stops changing (`waitForClassicGridToSettle`)
+// before extracting — see `isGridStable` for the pure stability decision.
+//
 // ================================================================================
 
 import fs from "node:fs/promises";
@@ -135,6 +150,56 @@ async function extractClassicGrid(browserPage) {
     }))
   );
   return chunkClassicGrid(raw);
+}
+
+/**
+ * Pure: given a rolling window of recent grid signatures (newest last),
+ * decides whether the trailing `stableRounds` are all identical — i.e. the
+ * classic UI's async-loaded bitmaps have stopped changing. Split out from
+ * the polling loop so the decision itself is testable without a browser.
+ */
+export function isGridStable(signatures, stableRounds = 3) {
+  if (signatures.length < stableRounds) return false;
+  const tail = signatures.slice(-stableRounds);
+  return tail.every((s) => s === tail[0]);
+}
+
+/**
+ * Polls a cheap signature of every `.bank img`'s `src` (a sparse char-code
+ * checksum, not the full base64 payload — that would mean shipping tens of
+ * megabytes back from the browser context on every poll) until it stops
+ * changing, meaning the classic UI's async/WebSocket-delivered bitmaps have
+ * finished arriving. See the ASYNC BITMAP GOTCHA note above the file header
+ * for why this is necessary — `networkidle` does not wait for this.
+ *
+ * @param {import("playwright").Page} browserPage
+ * @param {object} [opts]
+ * @param {(msg:string)=>void} [opts.onProgress]
+ * @param {number} [opts.intervalMs]
+ * @param {number} [opts.stableRounds]
+ * @param {number} [opts.maxWaitMs]
+ */
+async function waitForClassicGridToSettle(browserPage, { onProgress, intervalMs = 700, stableRounds = 3, maxWaitMs = 45000 } = {}) {
+  const start = Date.now();
+  const signatures = [];
+  while (Date.now() - start < maxWaitMs) {
+    const sig = await browserPage.evaluate(() => {
+      const imgs = document.querySelectorAll(".bank img");
+      let s = 0;
+      for (const img of imgs) {
+        const src = img.src;
+        for (let i = 0; i < src.length; i += 997) s = (Math.imul(s, 31) + src.charCodeAt(i)) | 0;
+      }
+      return s;
+    });
+    signatures.push(sig);
+    if (isGridStable(signatures, stableRounds)) {
+      onProgress?.(`  button bitmaps settled after ~${Math.round((Date.now() - start) / 1000)}s`);
+      return;
+    }
+    await browserPage.waitForTimeout(intervalMs);
+  }
+  onProgress?.(`  warning: button bitmaps hadn't settled after ${Math.round(maxWaitMs / 1000)}s — capturing anyway, some buttons may still show a placeholder image`);
 }
 
 /**
@@ -254,6 +319,7 @@ export async function captureScreenshotPage({ url, outDir, page, maxScrollSteps 
     }
 
     if (kind === "classic") {
+      await waitForClassicGridToSettle(browserPage);
       const chunks = await extractClassicGrid(browserPage);
       const found = new Map(chunks[0]?.map((b) => [`${b.row}-${b.col}`, b]) ?? []);
       const written = await writeButtonImages(found, outDir);
@@ -299,7 +365,8 @@ export async function captureManyPages({ pages, onProgress, maxScrollSteps }) {
     }
 
     if (kind === "classic") {
-      onProgress?.("Classic (pre-4.x) Companion UI detected — no scroll virtualization, reading the full flat button grid in one pass...");
+      onProgress?.("Classic (pre-4.x) Companion UI detected — no scroll virtualization, but bitmaps load in asynchronously; waiting for them to settle...");
+      await waitForClassicGridToSettle(browserPage, { onProgress });
       const chunks = await extractClassicGrid(browserPage);
       const results = [];
       for (let i = 0; i < pages.length; i++) {
