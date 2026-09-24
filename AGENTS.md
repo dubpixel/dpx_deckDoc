@@ -6,9 +6,9 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.9.2, classic-UI capture's async-bitmap bug fixed but not re-verified live — network gone (2026-09-23)
+**Status:** v0.10.1, public manual rebuilt as a hand-designed page matching dubpixel's other project sites (2026-09-24)
 **Branch:** `main`
-**Version File:** `VERSION` (currently 0.9.2)
+**Version File:** `VERSION` (currently 0.10.1)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 **Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
 
@@ -31,7 +31,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Regression tests | Node built-in `node:test` / `test/` | Covers the annotation store, config parser (schema-accurate fixture), manifest/page-selection helpers, `buildSite()`, and `serve.js`'s real HTTP routes | `npm test` — zero added dependencies. Capture itself is not unit-tested (browser/DOM-coupled); verify against a real instance |
 | Site generator | Node / `src/site/build.js` + `site-template/` | Builds one device's frozen static handoff site | No bundler; plain `<script>` (not `type="module"` — fails under `file://`, see Gotchas) |
 | Satellite capture (reference only) | Node (`net` sockets) / `src/capture/satellite.js` | Protocol-correct Satellite API client, not part of the primary pipeline | Dropped as unnecessary — see Key Decisions |
-| Public manual | Jekyll (GitHub Pages) / `index.md` + `_config.yml` | The repo's public website root — beginner-friendly quickstart, CLI reference, annotation field reference, links to the demo | No local build step; GitHub Pages runs Jekyll itself off `_config.yml`'s `remote_theme` |
+| Public manual | Hand-built static / `index.html` | The repo's public website root — beginner-friendly quickstart, CLI reference, annotation field reference, real screenshots, links to the demo | No Jekyll rendering (no front matter, no layout) — matches the pattern dubpixel's other project sites (dpx_tc002_frm, dpx_claudeDeck) use: a plain, hand-designed `index.html` at the repo root, served as-is by GitHub Pages. `_config.yml` is vestigial, kept only because those sibling repos keep theirs too |
 | Demo site | Node / `scripts/generate-demo-site.js` → `demo-src/device/` → `demo/` | Fabricates a small fake device (SVG placeholder buttons, no real Companion instance, no network) and runs it through the real `buildSite()` pipeline; output is committed static HTML under `/demo/` for Pages | Re-run `node scripts/generate-demo-site.js` after any `site-template/` or demo-content change; `demo/` is committed (not gitignored) since Pages serves it directly |
 | Notion concept doc | Notion / dpx_labs → dpx_deckDoc | Original concept, viewing-mode ideas, TODOs | **Source of truth for product concept** |
 
