@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Note
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
 
+## [0.10.2] - 2026-09-24
+
+### Fixed
+- **Zoomed-out page thumbnails (editor nav strip, static/demo site index cards) cropped button images, chopping their sides.** The thumbnail grid containers forced a fixed `16 / 10` aspect ratio while the actual button grid's shape (e.g. 8 cols × 4 rows) rarely matches that, so cells ended up non-square and `object-fit: cover` cropped the (actually square) button images to fit. Fixed by making each thumbnail cell square (`aspect-ratio: 1 / 1` on the image) instead of forcing the whole container to an arbitrary shape — `editor.css`, `site-template/style.css`, `demo-template/style.css`.
+
 ## [0.10.1] - 2026-09-24
 
 ### Changed
