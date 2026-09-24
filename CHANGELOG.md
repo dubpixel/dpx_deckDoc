@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
 - Issue #14 updated: the editable demo is now a confirmed want, not just a scoped maybe.
 
+## [0.9.2] - 2026-09-23
+
+### Fixed
+- **The classic (pre-4.x) UI fix in v0.9.1 was still incomplete: it fixed the DOM-selector mismatch but not a second, deeper bug.** That UI's button bitmaps load in asynchronously over a WebSocket after the page renders (`networkidle` doesn't wait for this — a long-lived WebSocket is never "in flight"). Reading the grid immediately after load caught most buttons still showing a shared placeholder frame. Confirmed against the real `8H_FRANK_v3.0.0` capture: only 63 of 3168 images (2%) were actually unique, versus ~94% unique on a comparable device captured via the modern/scroll path. Capture now polls a cheap signature of every button's image until it stops changing before extracting (`waitForClassicGridToSettle`/`isGridStable`).
+- **The existing local `8H_FRANK_v3.0.0` capture (and its `backups/` copy) predates this fix and still has the incomplete/placeholder content** — the show network is no longer reachable to re-scrape it. Re-run `scrape` against that instance next time it's reachable to get a correct capture; the fix itself is verified via a synthetic Playwright fixture that reproduces the same async-loading behavior (`test/screenshot.classicAsyncBitmaps.test.js`), since the real instance couldn't be re-tested live.
+
+### Added
+- `test/screenshot.classicAsyncBitmaps.test.js` — an intentional exception to "capture isn't unit-tested": drives the real `captureManyPages()` against a real Playwright browser and a local fixture server that reproduces the exact async-bitmap-swap behavior, proving the settle-wait actually works
+- Unit tests for `isGridStable()`'s stability decision
+
 ## [0.9.1] - 2026-09-23
 
 ### Fixed
