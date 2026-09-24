@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Note
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
 
+## [0.10.1] - 2026-09-24
+
+### Changed
+- **The public manual is now a hand-built `index.html`, not bare Jekyll-theme markdown.** The old `index.md` rendered through the vestigial `remote_theme`/`jekyll-theme-minimal` config and looked generic — replaced with a real designed page matching the visual bar of dpx_deckDoc's sibling dubpixel project sites (dpx_tc002_frm, dpx_claudeDeck): dark panel layout, real CTAs, GitHub stat badges, quickstart/CLI/annotation-field reference tables, and the real editable-demo screenshots. `_config.yml` is now vestigial (kept, matching the same pattern those sibling repos use) — nothing on the site actually goes through Jekyll's theme anymore.
+
 ## [0.10.0] - 2026-09-24
 
 ### Changed

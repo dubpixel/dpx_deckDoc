@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dpx_deckDoc — auto-generated documentation for your Bitfocus Companion rig</title>
+<meta name="description" content="Capture every button of a Bitfocus Companion / Stream Deck rig, annotate it, and ship it as a browsable, editable site — no more live walkthroughs to hand off a show.">
+<link rel="icon" href="images/dubbug_favicon.png">
+<style>
+  :root {
+    color-scheme: dark;
+    --accent: #7aa2ff;
+    --bg: #12131a;
+    --panel: #1c1e29;
+    --panel-border: #333648;
+    --text: #e8e9ef;
+    --text-dim: #8a8d9f;
+    --notice: #ff6b6b;
+  }
+  * { box-sizing: border-box; min-width: 0; }
+  body { overflow-x: hidden; }
+  img { max-width: 100%; height: auto; display: block; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #191b26 0%, var(--bg) 55%);
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    padding: 3rem 1.5rem 4rem;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  .brand { margin-bottom: 1.5rem; }
+  .brand img { height: 40px; display: block; margin-bottom: 0.6rem; border-radius: 6px; }
+  .brand span {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 0.4rem; letter-spacing: -0.01em; }
+  .tagline { color: var(--accent); font-size: 1rem; margin: 0 0 1.5rem; font-style: italic; }
+  .lede { color: var(--text-dim); margin: 0 0 2rem; line-height: 1.6; }
+
+  .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .cta {
+    display: inline-block;
+    background: var(--accent);
+    color: #0e0f14;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 0.8rem 1.6rem;
+  }
+  .cta:hover { opacity: 0.9; }
+  .cta.outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 1.5rem 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .panel h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 0 0 1rem;
+  }
+  p { line-height: 1.6; }
+  ul { margin: 0; padding-left: 1.2rem; color: var(--text-dim); line-height: 1.7; }
+  ul li::marker { color: var(--accent); }
+  ul strong { color: var(--text); }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    background: rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+  }
+  pre {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; color: var(--text-dim); }
+  table th, table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--panel-border); vertical-align: top; }
+  table th { color: var(--text); font-weight: 600; }
+  table code { white-space: nowrap; }
+
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 700px) { .shots { grid-template-columns: 1fr; } }
+  .shots figure { margin: 0; }
+  .shots img { width: 100%; border-radius: 8px; border: 1px solid var(--panel-border); display: block; }
+  .shots figcaption { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem; }
+
+  .demo-callout {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #12131a;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    text-decoration: none;
+  }
+  .demo-callout:hover { border-color: var(--accent); }
+  .demo-callout .ddot {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent) 0%, #a0e0c0 100%);
+  }
+  .demo-callout .dtext { color: var(--text); font-size: 0.9rem; line-height: 1.5; }
+  .demo-callout .dtext strong { color: var(--accent); }
+  .demo-callout .darrow { margin-left: auto; color: var(--text-dim); flex-shrink: 0; }
+
+  .links { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .links a {
+    color: var(--text);
+    text-decoration: none;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+  }
+  .links a:hover { background: rgba(255,255,255,0.1); }
+
+  footer {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 2rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; }
+  .badges img { height: 20px; display: block; }
+  .built-with { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .built-with img { height: 24px; display: block; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="images/logo.png" alt="dpx_deckDoc">
+      <span>dpx_deckDoc</span>
+    </div>
+
+    <h1>Auto-generated documentation for your Bitfocus Companion rig</h1>
+    <p class="tagline">Capture every button, annotate it, ship it as a browsable, editable site — no more live walkthroughs to hand off a show.</p>
+
+    <div class="badges">
+      <a href="https://github.com/dubpixel/dpx_deckDoc/graphs/contributors"><img src="https://img.shields.io/github/contributors/dubpixel/dpx_deckDoc.svg?style=flat-square" alt="Contributors"></a>
+      <a href="https://github.com/dubpixel/dpx_deckDoc/network/members"><img src="https://img.shields.io/github/forks/dubpixel/dpx_deckDoc.svg?style=flat-square" alt="Forks"></a>
+      <a href="https://github.com/dubpixel/dpx_deckDoc/stargazers"><img src="https://img.shields.io/github/stars/dubpixel/dpx_deckDoc.svg?style=flat-square" alt="Stargazers"></a>
+      <a href="https://github.com/dubpixel/dpx_deckDoc/issues"><img src="https://img.shields.io/github/issues/dubpixel/dpx_deckDoc.svg?style=flat-square" alt="Issues"></a>
+    </div>
+
+    <p class="lede">
+      If you run <a href="https://bitfocus.io/companion" style="color:inherit">Bitfocus Companion</a> to drive a
+      Stream Deck (or any StreamDeck-style panel) for a show, a real rig can end up with dozens of pages and
+      hundreds of buttons wired to OSC, MIDI, ATEM, vMix, QLab, disguise, and everything else Companion talks
+      to — none of it obvious to someone who didn't build it. <strong style="color:var(--text)">dpx_deckDoc</strong>
+      turns a live Companion instance into a browsable, editable reference site: a real picture of every button,
+      what it actually does, and a place to write that down — without hand-screenshotting anything.
+    </p>
+
+    <div class="cta-row">
+      <a class="cta" href="./demo/">Try the live demo &rarr;</a>
+      <a class="cta outline" href="https://github.com/dubpixel/dpx_deckDoc">Full README &amp; source &rarr;</a>
+    </div>
+
+    <a class="demo-callout" href="./demo/">
+      <span class="ddot"></span>
+      <span class="dtext">
+        The demo below is a <strong>real captured rig</strong> — 91 pages, 2823 buttons — and it's fully
+        editable in your browser. Nothing you type there leaves your own browser; a "Reset Demo" button
+        puts it back the way it was.
+      </span>
+      <span class="darrow">&rarr;</span>
+    </a>
+
+    <div class="panel">
+      <h2>Quickstart</h2>
+      <p style="color:var(--text-dim)">Three commands, in order — you don't need to learn the whole tool to get a first result.</p>
+      <pre><code>git clone https://github.com/dubpixel/dpx_deckDoc.git
+cd dpx_deckDoc
+npm install</code></pre>
+      <pre><code>node src/cli.js scrape --host 10.0.0.5 --device my-rig</code></pre>
+      <p style="color:var(--text-dim)">Replace the IP with your Companion instance and <code>my-rig</code> with whatever you want to call it. This is the only command that talks to Companion — it pulls the config export, walks every page, and captures every button's real rendered image, in one shot. Read-only; nothing on the Companion side changes.</p>
+      <pre><code>node src/cli.js serve --out devices</code></pre>
+      <p style="color:var(--text-dim);margin-bottom:0">Open <code>http://localhost:4321</code>. Every button is already labeled with what it's wired to. Click any button to add a plain-English write-up, then hit <strong style="color:var(--text)">Export Site</strong> to freeze it into a self-contained handoff folder — no server needed to view it.</p>
+    </div>
+
+    <div class="panel">
+      <h2>The three commands, in plain terms</h2>
+      <table>
+        <tr><th>Command</th><th>What it's for</th><th>When you'd run it</th></tr>
+        <tr><td><code>scrape</code></td><td>Capture a Companion instance</td><td>Once per rig, and again if the layout changes</td></tr>
+        <tr><td><code>serve</code></td><td>The editor you write notes in</td><td>Whenever you're actively documenting</td></tr>
+        <tr><td><code>build</code></td><td>Freeze one device to a static site</td><td>Handoff time (also the in-browser "Export Site" button)</td></tr>
+      </table>
+      <p style="margin-bottom:0">Each Companion instance you scrape becomes its own <strong style="color:var(--text)">device</strong> under <code>devices/&lt;name&gt;/</code> — scrape as many rigs as you want and switch between them in the editor. New devices can also be added straight from the browser via <strong style="color:var(--text)">+ New Device</strong>.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Annotation fields</h2>
+      <table>
+        <tr><th>Field</th><th>Where it comes from</th><th>Rendered as</th></tr>
+        <tr><td>Heading</td><td>You write it</td><td>Bold title</td></tr>
+        <tr><td>Body</td><td>You write it</td><td>Plain paragraph</td></tr>
+        <tr><td>Notice</td><td>You write it</td><td>Red — "don't do this unless..." warnings</td></tr>
+        <tr><td>Note</td><td>You write it</td><td>Italic — a quieter aside</td></tr>
+        <tr><td>Command</td><td>Auto-filled from the config export</td><td>Raw connection/action reference</td></tr>
+        <tr><td>Label override</td><td>You write it, optional</td><td>Replaces the on-image text, shown as an overlay</td></tr>
+      </table>
+      <p style="margin-bottom:0"><code>scrape</code> pre-fills <strong style="color:var(--text)">Command</strong> for every button from the real config export — it never invents text, and never overwrites a hand-edit. Body/Notice/Note/Label override always start empty and are entirely yours.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Screenshots</h2>
+      <p style="color:var(--text-dim);margin:0 0 1rem">Both taken from the live demo — real captured button art, not placeholders.</p>
+      <div class="shots">
+        <figure>
+          <img src="images/screenshots/editor-annotate.png" alt="Live editor mid-annotation">
+          <figcaption>The live editor — click any button to write it up.</figcaption>
+        </figure>
+        <figure>
+          <img src="images/screenshots/demo-page.png" alt="Static handoff site with editable demo form open">
+          <figcaption>The demo, mid-edit — this is what "editable" actually looks like.</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Managing pages &amp; devices</h2>
+      <ul>
+        <li><strong>Manage Pages</strong> lets you include/exclude specific pages from the exported site — hide internal test pages from a handoff doc</li>
+        <li>Each device card shows the real host:port it was scraped from and when, so you can tell rigs apart at a glance</li>
+        <li>Devices can be removed from the editor with the <strong>&times;</strong> on their card</li>
+      </ul>
+    </div>
+
+    <div class="cols">
+      <div class="panel">
+        <h2>Requirements</h2>
+        <ul>
+          <li>Node.js — <code>npm install</code> pulls in <a href="https://playwright.dev" style="color:var(--accent)">Playwright</a>, used only during <code>scrape</code></li>
+          <li>A Companion instance reachable over HTTP (its web UI port, usually <code>8000</code>)</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Testing the tool itself</h2>
+        <pre style="margin:0"><code>npm test</code></pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Built with</h2>
+      <div class="built-with">
+        <a href="https://nodejs.org"><img src="https://img.shields.io/badge/platform-node.js-lightgrey?style=flat-square" alt="Node.js"></a>
+        <a href="https://playwright.dev"><img src="https://img.shields.io/badge/capture-playwright-2eab6a?style=flat-square" alt="Playwright"></a>
+        <a href="https://bitfocus.io/companion"><img src="https://img.shields.io/badge/target-bitfocus%20companion-7aa2ff?style=flat-square" alt="Bitfocus Companion"></a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Links</h2>
+      <div class="links">
+        <a href="https://github.com/dubpixel/dpx_deckDoc">Full README &amp; source</a>
+        <a href="https://github.com/dubpixel/dpx_deckDoc/issues">Issues</a>
+        <a href="https://github.com/dubpixel/dpx_deckDoc#roadmap">Roadmap</a>
+        <a href="./demo/">Live demo</a>
+      </div>
+    </div>
+
+    <footer>
+      built by <a href="https://dubpixel.tv">dubpixel</a>
+    </footer>
+  </div>
+</body>
+</html>
