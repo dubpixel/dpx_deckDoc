@@ -103,7 +103,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 
 **Run the regression suite:** `npm test`.
 
-**Regenerate the public demo site:** `node scripts/generate-demo-site.js` — rebuilds `demo-src/device/` (fake data) and `/demo/` (frozen static output) from scratch; run after any `site-template/` change so the published demo stays current.
+**Regenerate the public demo site:** `node scripts/generate-demo-site.js` — copies the real `backups/8H_LOCAL_v3.5.1--10.196.191.1--2026-09-23/` capture into `demo-src/device/`, runs `buildSite()`, then swaps in `demo-template/`'s editable viewer/CSS and writes the result to `/demo/`. Run after any `site-template/`/`demo-template/` change, or to refresh from a different/fresher backup (review its content first — see the note below).
 
 **Real-device backups for building a better demo (#14):** `backups/` at the project root (gitignored, never committed — real show data) holds full snapshots of two real devices, pulled 2026-09-23 before either rig gets reprogrammed: `backups/8H_LOCAL_v3.5.1--10.196.191.1--2026-09-23/` (91 pages, 2823 buttons) and `backups/8H_FRANK_v3.0.0--10.196.11.21--2026-09-23/` (99 pages, 3168 buttons). Each has the full manifest, captured button images, page titles, and the raw `.companionconfig` export — use these as the real-shape source when building #14's content-rebuilt demo generator.
 
