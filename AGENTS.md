@@ -6,9 +6,9 @@ This document provides operational directives for AI coding assistants (GitHub C
 
 ## PROJECT: dpx_deckDoc
 
-**Status:** v0.10.1, public manual rebuilt as a hand-designed page matching dubpixel's other project sites (2026-09-24)
+**Status:** v0.11.0, double-click launcher added (first step of #15) (2026-11-04)
 **Branch:** `main`
-**Version File:** `VERSION` (currently 0.10.1)
+**Version File:** `VERSION` (currently 0.11.0)
 **Repo:** https://github.com/dubpixel/dpx_deckDoc (public)
 **Pages:** https://dubpixel.github.io/dpx_deckDoc/ (manual) · https://dubpixel.github.io/dpx_deckDoc/demo/ (demo)
 
@@ -24,6 +24,7 @@ Auto-generated documentation tool for Bitfocus Companion control-surface setups.
 | Web UI capture | Playwright / `src/capture/screenshot.js` | Extracts real rendered button bitmaps directly from Companion's tablet UI DOM | `captureManyPages` does one continuous scroll for a whole scrape (see Gotchas); `captureScreenshotPage` is the single-page convenience wrapper. Auto-detects and supports TWO Companion UI generations: "modern" (4.x's virtualized `.button-control` scroller) and "classic" (pre-4.x's flat `.bank img` grid, whose bitmaps load in asynchronously — waited out by `waitForClassicGridToSettle`) — see Gotchas #12 and #13 |
 | Config parser | Node / `src/config/parseExport.js` | Parses a `.companionconfig` export (gzip JSON) into per-button connection/action metadata + page titles | Schema confirmed against a real export, not guessed |
 | Annotation store | Node / `src/annotate/store.js` | Reads/writes `<device>/annotations.json`; structured fields (Heading/Body/Notice/Note/Command), never clobbers a hand-written entry | `command` holds raw prefill data; `body` is always left for a human write-up |
+| Launcher | bash / `Launch DeckDoc.command` | Double-clickable macOS launcher: first-run setup, starts `serve`, opens the browser, reuses a running instance | Window must stay open (it hosts the server); background service / packaged app still open under #15 |
 | Live editor | Node `http` / `src/serve.js` + `editor-template/` | Multi-device editable local app — device switcher (shows real host:port + last-scraped time, "×" to delete a device), page nav with thumbnails, click-to-edit side panel, "+ New Device" scrapes from the browser (no CLI needed), "Manage Pages" include/exclude checkboxes | `node src/cli.js serve --out devices` |
 | Page selection | Node / `src/pageSelection.js` | Per-page include/exclude flags (`<device>/page-selection.json`) — excluded pages are hidden from the editor nav and skipped by `build` | Included by default; only explicit `false` excludes |
 | Export from browser | `src/serve.js` `/api/build` + `/built/<device>/...` | Runs `buildSite()` server-side and serves the result back so the frozen static site can be opened without touching the CLI | "Export Site" button in the editor header |
@@ -116,7 +117,7 @@ See the Notion page `dpx_labs / dpx_deckDoc` for the original concept, viewing-m
 **Closed:** [#6 — GitHub Pages manual](https://github.com/dubpixel/dpx_deckDoc/issues/6) and [#7 — demo site](https://github.com/dubpixel/dpx_deckDoc/issues/7), built together in v0.8.0. #7 shipped as option 1 from its own ticket (static frozen `build` output, dummy data, zero real Companion data). PR #13 (no separate ticket — found and fixed same-session) added classic pre-4.x Companion UI capture support after Frank's station silently captured zero buttons; merged in v0.9.1.
 
 **Open tickets, roughly in priority order (as of 2026-09-23):**
-- [#15 — Fully GUI-driven experience, no terminal ever](https://github.com/dubpixel/dpx_deckDoc/issues/15): **current top priority.** Starting `serve` is the last remaining terminal step; ideas range from a double-clickable launcher to a proper packaged app
+- [#15 — Fully GUI-driven experience, no terminal ever](https://github.com/dubpixel/dpx_deckDoc/issues/15): **current top priority.** Starting `serve` was the last remaining terminal step — now covered by `Launch DeckDoc.command` (v0.11.0); no-window/background and packaged-app variants remain; ideas range from a double-clickable launcher to a proper packaged app
 - [#14 — Rebuild the demo from real device shape + editable with a content-safety story](https://github.com/dubpixel/dpx_deckDoc/issues/14): confirmed wanted (not just scoped) — real device shape/scale for content, fictional "SNL-style" labels, and it needs to actually become editable (option 2 from the old #7 design options), with a reset/safety story since it'll be public. Source material for the content rebuild is staged locally (see Common Operations below)
 - [#9 — Improve first-run CLI ergonomics / install experience](https://github.com/dubpixel/dpx_deckDoc/issues/9) / PR #12: built and tested (guided `init`, per-subcommand `--help`, a `demo` command), but **deprioritized** — the user doesn't use the CLI and wants #15 instead. PR left open, not merged; may still be useful as building blocks under a future GUI launcher
 

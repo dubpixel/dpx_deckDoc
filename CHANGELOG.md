@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Note
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
 
+## [0.11.0] - 2026-11-04
+
+### Added
+- **`Launch DeckDoc.command` — double-click launcher (macOS), first step of [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15).** Starts the live editor and opens it in the default browser; no terminal knowledge needed. Does first-run setup itself (`npm install`, Playwright's Chromium), reuses an already-running editor instead of starting a second one, and shows native dialogs (not a vanishing window) if Node.js is missing or the port is taken. `DECKDOC_PORT` / `DECKDOC_OUT` override the defaults. Closing its Terminal window stops the editor. Still open under #15: a no-window background service / login item, and a packaged app.
+
 ## [0.10.2] - 2026-09-24
 
 ### Fixed
