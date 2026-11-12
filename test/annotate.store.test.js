@@ -5,9 +5,10 @@
 // ================================================================================
 //
 // Regression coverage for the annotation store's two non-obvious
-// invariants: prefill never overwrites a manual edit, and prefill never
-// touches `body` (only `command`) — both were explicit user requirements
-// that regressed once already during development.
+// invariants: prefill never overwrites a manual edit (regressed once during
+// development), and a hand-written `body` always beats an auto-drafted one.
+// (Until v0.12.0 prefill never touched `body` at all; the user then asked for
+// the tool to draft heading/body itself — "its really annoying" to start blank.)
 //
 // ================================================================================
 
@@ -32,19 +33,40 @@ describe("keyFor", () => {
 });
 
 describe("mergePrefill", () => {
-  test("populates command, never body, for a fresh button", () => {
+  test("populates command only when the parser has nothing else to offer", () => {
     const annotations = {};
     mergePrefill(annotations, [
       { page: 1, row: 0, col: 2, command: "Connection: foo — Actions: cue" },
     ]);
     const entry = annotations["1/0/2"];
     assert.equal(entry.command, "Connection: foo — Actions: cue");
-    assert.equal(entry.body, "", "prefill must never write to body");
+    assert.equal(entry.body, "");
     assert.equal(entry.heading, "");
     assert.equal(entry.notice, "");
     assert.equal(entry.note, "");
     assert.equal(entry.labelOverride, "");
     assert.equal(entry.source, "prefilled");
+  });
+
+  test("drafts heading, body and note from the parsed metadata", () => {
+    const annotations = {};
+    mergePrefill(annotations, [
+      { page: 1, row: 0, col: 2, command: "c", heading: "PLAY 3", body: "Play to end [d3].", note: "from companion" },
+    ]);
+    const entry = annotations["1/0/2"];
+    assert.equal(entry.heading, "PLAY 3");
+    assert.equal(entry.body, "Play to end [d3].");
+    assert.equal(entry.note, "from companion");
+    assert.equal(entry.source, "prefilled");
+  });
+
+  test("an auto-drafted body never overwrites a hand-written one", () => {
+    const annotations = {
+      "1/0/2": { heading: "Mine", body: "Hand-written", notice: "", note: "", command: "", labelOverride: "", source: "manual" },
+    };
+    mergePrefill(annotations, [{ page: 1, row: 0, col: 2, command: "x", heading: "AUTO", body: "auto body" }]);
+    assert.equal(annotations["1/0/2"].heading, "Mine");
+    assert.equal(annotations["1/0/2"].body, "Hand-written");
   });
 
   test("never overwrites an existing manual entry", () => {
