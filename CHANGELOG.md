@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Note
 - Priority direction confirmed: fully GUI-driven experience wanted over CLI ergonomics — filed [#15](https://github.com/dubpixel/dpx_deckDoc/issues/15). Issue #9 / PR #12 (guided `init`, `--help`, `demo` command) is built, tested, and left open but deprioritized.
 
+## [0.12.0] - 2026-11-11
+
+### Added
+- **Smart auto-fill: a scrape now pre-writes each button's annotation instead of leaving it blank.** `heading` is the button's own on-face text; `body` is a plain-English description of what pressing it does ("Route I1 → O9 [101-stage2-LW]", "Go to page 5", "Cue: play section on track … @ 2.0.0 [d3mtc-main], then …"), including release actions, multi-step buttons, and which feedbacks drive its state; `note` carries Companion's own per-button notes if set. Long runs (e.g. 32 crosspoints) collapse to the first few plus a count. Anything unrecognized falls back to a humanized "<action> (key=value, …)" rather than a guess; expression-valued options show as "(expression)" instead of a wrong value. New `src/config/describe.js`.
+- Parser now reads all three export generations seen on real rigs: v12 (Companion 4.x/5.x), v6 (3.5) and v3 (3.0's flat `bank:<page>-<n>` controls). Tests in `test/describe.test.js`.
+
+### Fixed
+- **Companion 5.0 exports got no useful prefill:** its buttons are `button-layered`, which the parser treated as a "Built-in control" — every configured button was mislabeled. Only pageup/pagedown/pagenum are truly built-in.
+- v6 (3.5) exports read actions as `definitionId`/`connectionId`, so their action names showed as "unknown-action" and connections were blank; they now read `action`/`instance` correctly.
+
+### Changed
+- Prefill used to leave `body` empty for a human to write. It now drafts `body`/`heading`/`note` itself (`source: "prefilled"`); a hand-edit still marks the entry `manual` and always wins over any later re-prefill. Refresh an existing device without re-scraping: `node src/cli.js annotate --config devices/<slug>/export.companionconfig --out devices/<slug>`.
+
 ## [0.11.0] - 2026-11-04
 
 ### Added

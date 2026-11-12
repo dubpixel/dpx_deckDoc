@@ -31,7 +31,7 @@ export function keyFor(page, row, col) {
 /**
  * @typedef {object} Annotation
  * @property {string} heading
- * @property {string} body - human-written, "decyphered" explanation; never auto-filled
+ * @property {string} body - plain-English description of what the button does. Auto-drafted from the config export (source "prefilled"); replaced by whatever a human writes (source "manual")
  * @property {string} notice
  * @property {string} note
  * @property {string} command - raw technical prefill (connection/action names)
@@ -69,8 +69,10 @@ export async function saveAnnotations(outDir, annotations) {
 
 /**
  * Merges parsed config-export button metadata into the annotation store as
- * "prefilled" entries (`body` only). Never overwrites an existing "manual"
- * annotation — hand-written notes always win, field by field.
+ * "prefilled" entries: `command` (raw names), plus a drafted `heading` (the
+ * button's own text), `body` (plain-English description) and `note` (Companion's
+ * own per-button notes) when the export provides them. Never overwrites an
+ * existing "manual" annotation — hand-written notes always win.
  *
  * @param {Record<string, Annotation>} annotations - existing store, mutated in place
  * @param {import("../config/parseExport.js").ButtonMeta[]} buttonMetas
@@ -84,6 +86,9 @@ export function mergePrefill(annotations, buttonMetas) {
 
     annotations[key] = {
       ...BLANK,
+      heading: meta.heading ?? "",
+      body: meta.body ?? "",
+      note: meta.note ?? "",
       command: meta.command,
       source: "prefilled",
     };
